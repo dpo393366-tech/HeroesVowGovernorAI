@@ -2,6 +2,7 @@
 #if StrategicSupport
 public static class StrategicSupport {
  public static BepInEx.Configuration.ConfigEntry<bool> ShowCityArrivalReport=new(true),ShowCityCapacityReport=new(true);
+ public static BepInEx.Configuration.ConfigEntry<bool> ProtectFamilyPrivateTraining=new(true),ExcludeFamilyAutoRelocation=new(false);
  public static int Amount,Gender,Calls,CancelledId,PausedId;public static bool Paused;
  public static string RecruitmentQueueStatus()=>"성공 0 / 목표 30";
  public static string StartRecruitmentQueue(int amount,int gender){Amount=amount;Gender=gender;Calls++;return "OK";}

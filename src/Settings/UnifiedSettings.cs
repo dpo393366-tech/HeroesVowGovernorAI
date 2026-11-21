@@ -78,7 +78,8 @@ namespace Vow.Settings {
   }
   static object GovernorCall(string name,params object[] args){try{return governorApi?.GetMethod(name,BindingFlags.Public|BindingFlags.Static)?.Invoke(null,args);}catch(Exception e){Fault("governor "+name,e);return "처리를 완료하지 못했습니다. 로그를 확인해 주세요.";}}
   static void Governor(){
-   GUILayout.BeginHorizontal();if(GUILayout.Button("국고 분배"))governorTab=0;if(GUILayout.Button("자동 등용"))governorTab=1;if(GUILayout.Button("보고 설정"))governorTab=2;GUILayout.EndHorizontal();
+   GUILayout.BeginHorizontal();if(GUILayout.Button("국고 분배"))governorTab=0;if(GUILayout.Button("자동 등용"))governorTab=1;if(GUILayout.Button("보고 설정"))governorTab=2;if(GUILayout.Button("장수 배치"))governorTab=3;GUILayout.EndHorizontal();
+   if(governorTab==3){OfficerDeployment();return;}
    if(governorTab==2){ArrivalReports();return;}
    if(governorTab==0){if(treasuryPercent!=null)Treasury();else GUILayout.Label("국고 분배 모드 로딩 대기");return;}
    if(governorApi?.GetMethod("RecruitmentQueueRows")==null){GUILayout.Label("목록형 자동 등용을 지원하는 도독 AI 버전이 필요합니다.");return;}
@@ -102,6 +103,17 @@ namespace Vow.Settings {
    if(operation!=null)recruitMessage=(string)(operation=="cancel"?GovernorCall("CancelRecruitmentQueue",changed):GovernorCall("SetRecruitmentQueuePaused",changed,operation=="pause"));
    GUILayout.Label("X: 새 파견 종료. 이미 진행 중인 임무를 정리한 뒤 다음 예약으로 넘어갑니다. 완료 항목의 X는 목록에서 제거합니다.");
    if(!string.IsNullOrEmpty(recruitMessage))GUILayout.Label(recruitMessage);
+  }
+  static void OfficerDeployment(){
+   var training=governorApi?.GetField("ProtectFamilyPrivateTraining",Fields)?.GetValue(null) as ConfigEntry<bool>;
+   var family=governorApi?.GetField("ExcludeFamilyAutoRelocation",Fields)?.GetValue(null) as ConfigEntry<bool>;
+   if(training==null||family==null){GUILayout.Label("장수 배치 보호를 지원하는 도독 AI 버전이 필요합니다.");return;}
+   bool value=GUILayout.Toggle(training.Value,"사병 육성 중인 가문 장수 보호");if(value!=training.Value)training.Value=value;
+   GUILayout.Label("사병 모집·훈련이 남아 있는 담당 장수의 자동 전근을 막습니다. 육성이 끝나면 다시 배치 후보에 포함합니다.");
+   value=GUILayout.Toggle(family.Value,"가문 장수 전체 자동 전근 제외");if(value!=family.Value)family.Value=value;
+   GUILayout.Label("켜면 육성 여부와 관계없이 내 가문 장수 전체를 자동 전근에서 제외합니다.");
+   GUILayout.Label("군주의 부하로 임관 중이어도 적용 · 직접 내리는 이동 명령은 허용");
+   GUILayout.Label("변경 즉시 저장·적용 · 이미 이동 중인 장수는 자동 복귀시키지 않습니다.");
   }
   static void ArrivalReports(){
    var ordinary=governorApi?.GetField("ShowCityArrivalReport",Fields)?.GetValue(null) as ConfigEntry<bool>;

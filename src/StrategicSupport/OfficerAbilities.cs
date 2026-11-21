@@ -18,7 +18,7 @@ public sealed partial class StrategicSupport
         }
         if(generatingHomeOfficers!=null&&__instance.Pointer==generatingHomeCity&&__result!=null){
             var allowed=new Il2CppSystem.Collections.Generic.List<CLAGKDECFID>();
-            foreach(var h in __result)if(h!=null&&generatingHomeOfficers.Contains(h.OJPECMNINNA))allowed.Add(h);
+            foreach(var h in __result)if(h!=null&&generatingHomeOfficers.Contains(h.OJPECMNINNA)&&(!rebalancing||!FamilyRelocationProtected(h)))allowed.Add(h);
             if(generatingOfficerPoolLimit>0&&allowed.Count>generatingOfficerPoolLimit){
                 // Prefer native command capacity; never raise it or alter rank.
                 var ranked=new System.Collections.Generic.List<CLAGKDECFID>();foreach(var h in allowed)ranked.Add(h);

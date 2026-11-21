@@ -16,7 +16,7 @@ public sealed partial class StrategicSupport {
   var cities=new List<AFAGFHJONFJ>();foreach(var kv in MICGPAMNDKM.IJPKEMPIFIH)if(kv.Value?.Pointer!=source.Pointer&&kv.Value?.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL)cities.Add(kv.Value);
   if(cities.Count==0)return false;cities.Sort((x,y)=>string.CompareOrdinal(x.OJPECMNINNA,y.OJPECMNINNA));exchangeCursor.TryGetValue(source.OJPECMNINNA,out int cursor);
   AFAGFHJONFJ target=null;OfficerBalancePolicy.Officer give=null,take=null;double best=.025;
-  bool Movable(AFAGFHJONFJ city,OfficerBalancePolicy.Officer h)=>h.Id!=city.LMPMNLLGOEC.IPJHOOJBCKI&&h.Id!=city.LMPMNLLGOEC.BKENJPNKMGI&&CanGate("officer-balance:"+h.Id);
+  bool Movable(AFAGFHJONFJ city,OfficerBalancePolicy.Officer h)=>!FamilyCityOfficerProtected(city,h.Id)&&h.Id!=city.LMPMNLLGOEC.IPJHOOJBCKI&&h.Id!=city.LMPMNLLGOEC.BKENJPNKMGI&&CanGate("officer-balance:"+h.Id);
   for(int i=0;i<Math.Min(2,cities.Count);i++){
    var city=cities[(cursor+i)%cities.Count];if(!ExchangeCity(city,f,teams)||!ViableSource(city,teams,reserve))continue;
    var b=OfficerRoster(city,teams,false,cache);if(b.Count<4)continue;

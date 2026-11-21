@@ -5,7 +5,7 @@
   "files": [
     {
       "path": "BepInEx/plugins/StrategicSupport/StrategicSupport.dll",
-      "sha256": "92CEFD70AAA0B4B627A862E6E8F5BEEB897BBFE8B996F5AB8C2BB95A00CBF650"
+      "sha256": "817E5DD66C47F47DAB94B96F0C762B0B0AE0B2D8B1CE82895C443CC2453398A3"
     },
     {
       "path": "BepInEx/plugins/TreasuryAwards/TreasuryAwards.dll",
@@ -13,7 +13,7 @@
     },
     {
       "path": "BepInEx/plugins/HeroesVowSettings.dll",
-      "sha256": "EF5C2B97D9E32928B82DE80467BD145793DEDEFF4786B14D5F23A7DC20674C38"
+      "sha256": "D0C77A6A5AC3AF431716E303C54A2A81D4AF3D03ED07D63768528DE1F9097820"
     },
     {
       "path": "BepInEx/patchers/HeroesVowGovernorAI/GovernorAutoUpdate.dll",

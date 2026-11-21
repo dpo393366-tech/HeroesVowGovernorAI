@@ -57,7 +57,7 @@ public sealed partial class StrategicSupport
             var targetRoster=OfficerRoster(c,teams,true,cache);
             var targetProfile=new OfficerBalancePolicy.Profile(targetRoster,OfficerAbilityDimensions);
             foreach(var officer in sourceRoster){
-                if(!CanGate("officer-balance:"+officer.Id)||officer.Id==source.LMPMNLLGOEC.IPJHOOJBCKI||officer.Id==source.LMPMNLLGOEC.BKENJPNKMGI)continue;
+                if(FamilyCityOfficerProtected(source,officer.Id)||!CanGate("officer-balance:"+officer.Id)||officer.Id==source.LMPMNLLGOEC.IPJHOOJBCKI||officer.Id==source.LMPMNLLGOEC.BKENJPNKMGI)continue;
                 double gain=OfficerBalancePolicy.Gain(sourceProfile,targetProfile,officer,baseline);
                 double countGain=.01*(sourceRoster.Count-targetRoster.Count-1);
                 if(home-count<3&&gain-countGain<=1e-6)continue;

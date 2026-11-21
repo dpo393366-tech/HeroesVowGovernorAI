@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -48,8 +48,8 @@ public partial class CLAGKDECFID:Native{
 public class PPDKOMFGILG{public BHBNKONCOJD EBIOPDHEBOF;}
 public partial class MKMOJNAJKJE:Native{public string IBGCLCAIBOL;public int DNOGPFHMOMO;public Dictionary<string,FNFJODHIJFO> ANMMMOIKLEG=new();public Dictionary<string,PPDKOMFGILG>AENJACOFBJK=new();}
 public class HKBLIJKMPNJ{public float KCANKJJJNAC=500;public Dictionary<string,float> LGACDLFDIJG=new();public string LMMNKIOAGLC,IPJHOOJBCKI,BKENJPNKMGI;public int DNOGPFHMOMO,PNHICLAGHGD=10000,OEGNGFBCHFL=10000000;public Il2CppSystem.Collections.Generic.List<DHKINGPDKJJ>KJPPGIOCDID=new();}
-public class DHKINGPDKJJ:Native{public string LMMNKIOAGLC;public string OLMAJLLIJDM="";public int OJPECMNINNA;public ANOPPJKAPIG AAKKDAPJMHC;public int CombatValue;public int GNCKPEPJDGF()=>CombatValue>0?CombatValue:FGHFOLKBHDL;public bool MGLFFEANDOI=true,MJNINDNBJHA=true;public int FGHFOLKBHDL=1000;public PMNFKDJNLDJ GDHPLIFJCBN;}
-public static class EBNFFALGBPA{public static int[] AIEJCKPDMLE={1000,2000,3000,4000},LNBFFMONMCN={100000,200000,300000,400000};public static int LLLBAAAEIBB=2000;}
+public partial class DHKINGPDKJJ:Native{public string LMMNKIOAGLC;public string OLMAJLLIJDM="";public int OJPECMNINNA;public ANOPPJKAPIG AAKKDAPJMHC;public int CombatValue;public int GNCKPEPJDGF()=>CombatValue>0?CombatValue:FGHFOLKBHDL;public bool MGLFFEANDOI=true,MJNINDNBJHA=true;public int FGHFOLKBHDL=1000;public PMNFKDJNLDJ GDHPLIFJCBN;}
+public static partial class EBNFFALGBPA{public static int[] AIEJCKPDMLE={1000,2000,3000,4000},LNBFFMONMCN={100000,200000,300000,400000};public static int LLLBAAAEIBB=2000;}
 public static class NEINKOOBJIH{public static AFAGFHJONFJ JKGJNLHLJAJ;public static double MIPFHCKDJOK;public static CLAGKDECFID POMNMBGDDIN=new();public static string OPIKIHPNCIP="player";public static Dictionary<string,MKMOJNAJKJE>COCMABJFOFH=new();public static List<string> JMIADAFPGMC=new(),AOPJBNBGPLP=new();}
 public static class MICGPAMNDKM{public static Dictionary<int,Ci_BuildingCtrl> DKDKOJNIGAJ=new();public static NativeDict<string,AFAGFHJONFJ> IJPKEMPIFIH=new();}
 public static partial class ICGAEMLACJG{public static Dictionary<int,Wo_DeployTeamCtrl>HFJIECIBFKB=new();}

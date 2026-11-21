@@ -34,7 +34,7 @@ public sealed partial class StrategicSupport {
    &&!owned.Any(x=>x.LMPMNLLGOEC.IPJHOOJBCKI==h.OJPECMNINNA||x.LMPMNLLGOEC.BKENJPNKMGI==h.OJPECMNINNA);
  static bool AdministrativeCandidate(CLAGKDECFID h,AFAGFHJONFJ c,List<AFAGFHJONFJ> owned)=>AdministrativeCandidateIndexed(h,c,owned,null);
  static bool AdministrativeCandidateIndexed(CLAGKDECFID h,AFAGFHJONFJ c,List<AFAGFHJONFJ> owned,List<CLAGKDECFID> local){
-  if(!RelocationHome(h,c)||h.OJPECMNINNA==c.LMPMNLLGOEC.LMMNKIOAGLC||owned.Any(x=>x.LMPMNLLGOEC.IPJHOOJBCKI==h.OJPECMNINNA||x.LMPMNLLGOEC.BKENJPNKMGI==h.OJPECMNINNA))return false;
+  if(!RelocationHome(h,c)||FamilyRelocationProtected(h)||h.OJPECMNINNA==c.LMPMNLLGOEC.LMMNKIOAGLC||owned.Any(x=>x.LMPMNLLGOEC.IPJHOOJBCKI==h.OJPECMNINNA||x.LMPMNLLGOEC.BKENJPNKMGI==h.OJPECMNINNA))return false;
   if(h.OGPEJIEHDAN.HFBAJIGHOAF==GCPCLLMKIMM.PrivateMilitary)return true;
   if(h.OGPEJIEHDAN.HFBAJIGHOAF!=GCPCLLMKIMM.None)return false;
   var duty=h.BAPIJIJLLCA?.HFBAJIGHOAF??OEBGIDGEIIG.None;

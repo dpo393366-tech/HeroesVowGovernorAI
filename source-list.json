@@ -94,7 +94,8 @@
     "NearestReturnRoads.cs",
     "BattleDispatchRetry.cs",
     "DispatchDiagnostics.cs",
-    "AttackProbeCapacity.cs"
+    "AttackProbeCapacity.cs",
+    "FamilyOfficerProtection.cs"
   ],
   "StrategicSupportTests": [
     "IntegrationTests.cs",
@@ -166,7 +167,8 @@
     "Camp117Tests.cs",
     "BattleRetry118Tests.cs",
     "Dispatch119Tests.cs",
-    "Attack120Tests.cs"
+    "Attack120Tests.cs",
+    "Family121Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

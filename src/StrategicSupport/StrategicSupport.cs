@@ -22,7 +22,7 @@ public sealed partial class StrategicSupport:BasePlugin
     [ThreadStatic] static int governorStaffing;
     public override void Load()
     {
-        log=Log; ConfigurePerformance(); ConfigureArrivalReports();
+        log=Log; ConfigurePerformance(); ConfigureArrivalReports(); ConfigureFamilyProtection();
         enabled=Config.Bind("General","Enabled",true,"Enable strategic support and recruitment funding.");
         support=Config.Bind("Defense","Enabled",true,"Reinforce threatened friendly cities using available regular garrisons.");
         budget=Config.Bind("Recruitment","Enabled",true,"Transfer real treasury funds to eligible AI-managed cities before native recruitment/staffing.");
@@ -37,14 +37,14 @@ public sealed partial class StrategicSupport:BasePlugin
         var h=new Harmony("local.heroesvow.strategicsupport");
         HarmonyMethod H(string n)=>new HarmonyMethod(typeof(StrategicSupport),n);
         try {
-            HookArrivalReports(h); HookManualOrders(h); HookParcelPool(h); HookOffense(h); HookAdministration(h); HookBattle(h); HookInvestment(h);
+            HookArrivalReports(h); HookManualOrders(h); HookFamilyProtection(h); HookParcelPool(h); HookOffense(h); HookAdministration(h); HookBattle(h); HookInvestment(h);
             h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"GHNEGBJANJG"),postfix:H(nameof(AfterPlan)));
             h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"OBIOEOJAHMM"),prefix:H(nameof(BeginStaff)),finalizer:H(nameof(EndStaff)));
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"OBIOEOJAHMM"),prefix:H(nameof(BeforeStaff)));
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"JFOOAMEIMDO"),prefix:H(nameof(BeforeRecruit)));
             HookRecruitmentQuality(h); HookOfficerSelection(h); HookWorldTiming(h); StartPerformance(h);
         } catch(Exception e) {Note("STARTUP FAILED "+e);h.UnpatchSelf();throw;}
-        Note("Strategic Support 1.5.43 loaded; build=attack-readiness-r120; camp-r117 retained; per-source battle cancellation memory, exact-road lazy return search, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
+        Note("Strategic Support 1.5.43 loaded; build=family-protection-r121; camp-r117 retained; per-source battle cancellation memory, exact-road lazy return search, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
     }
     static void Error(Exception e){if(Environment.TickCount64<nextError)return;nextError=Environment.TickCount64+30000;Note("ERROR "+e);log.LogWarning(e.ToString());}
     static bool Ready()
