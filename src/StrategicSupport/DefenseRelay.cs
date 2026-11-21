@@ -59,7 +59,7 @@ public sealed partial class StrategicSupport {
   foreach(var t in teams){yield return "incoming-order";if(!t)continue;ids.Add(t.m_id);
    // Reuse the existing sliced scan; do not add a per-frame global army scan.
    // This also recovers orphaned Expedition survivors loaded from a save.
-   AdoptCompletedCityOrder(t);AuditCampState(t);RecoverHostileStandoff(t);ScheduleReturnWatch(t);
+   AdoptCompletedCityOrder(t);AuditCampState(t);RecoverHostileStandoff(t);WatchCampaignMarch(t);ScheduleReturnWatch(t);
    if(CampIdle(t))AfterCampaignDay(t);
    string signature=t.m_belongPower+"|"+t.m_targetCity+"|"+(int)t.m_deployState+"|attack="+t.m_attackTarget?.m_id+"|war="+t.m_targetWarInfo?.HIENOINGBCN;
    if(!defenseSignatures.TryGetValue(t.m_id,out var previous)||previous!=signature){

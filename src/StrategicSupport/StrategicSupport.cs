@@ -44,7 +44,7 @@ public sealed partial class StrategicSupport:BasePlugin
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"JFOOAMEIMDO"),prefix:H(nameof(BeforeRecruit)));
             HookRecruitmentQuality(h); HookOfficerSelection(h); HookWorldTiming(h); StartPerformance(h);
         } catch(Exception e) {Note("STARTUP FAILED "+e);h.UnpatchSelf();throw;}
-        Note("Strategic Support 1.5.43 loaded; native delegated-city eligibility, investment decision diagnostics, predictive food supply and frontier reserves.");
+        Note("Strategic Support 1.5.43 loaded; build=camp-r117; exact-road lazy return search, reserved recovery work, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
     }
     static void Error(Exception e){if(Environment.TickCount64<nextError)return;nextError=Environment.TickCount64+30000;Note("ERROR "+e);log.LogWarning(e.ToString());}
     static bool Ready()

@@ -8,6 +8,7 @@ public sealed partial class StrategicSupport {
  sealed class CampaignGoal {
   public int Id; public string Faction,Goal,OrderTarget; public bool Returning,Ordered,MovingLogged,Staging,CompletedOrder;
   public Vector3 Position; public double OrderedDay,CheckedDay=-1; public int Failures,CheckedPeriod;
+  public Vector3 ProgressPosition;public double ProgressDay=-1;public string ProgressTarget;
   public readonly Dictionary<string,double> RetryAfter=new();
  }
  static readonly Dictionary<IntPtr,CampaignGoal> campaignGoals=new();
@@ -89,7 +90,7 @@ public sealed partial class StrategicSupport {
  static void AfterCampaignDay(Wo_DeployTeamCtrl __instance){
   try{
    if(!Ready())return;ObserveManualTeam(__instance);if(ManualProtected(__instance))return;AdoptCompletedCityOrder(__instance);if(!CampaignControlled(__instance,out _))return;
-   var t=__instance;RememberCampaign(t);ScheduleReturnWatch(t);
+   var t=__instance;RememberCampaign(t);WatchCampaignMarch(t);ScheduleReturnWatch(t);
    if(!campaignGoals.TryGetValue(t.Pointer,out var s))return;
    if(s.Ordered&&(s.OrderTarget==t.m_targetCity||(s.Staging&&string.IsNullOrEmpty(t.m_targetCity)))){
     float moved=Vector3.Distance(s.Position,t.GetPosition());
@@ -102,6 +103,22 @@ public sealed partial class StrategicSupport {
    // Mark a decision day only after the queue actually accepts the work.
    if(work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,s).GetEnumerator())){s.CheckedDay=day;s.CheckedPeriod=period;}
   }catch(Exception e){Error(e);}
+ }
+ static void WatchCampaignMarch(Wo_DeployTeamCtrl t){
+  // A pending native order gets a full decision period to start. Watch actual
+  // position, not the Expedition label or merely having a path. Dedicated
+  // support/interception owners and manual commands retain their own control.
+  if(!t||t.m_deployState!=AKOPKFPKJPP.Expedition||t.m_warInfo!=null||t.m_targetWarInfo!=null||OtherCampaignOrder(t)||!CampaignControlled(t,out _)
+   ||missions.ContainsKey(t.Pointer)||capacityOrders.ContainsKey(t.Pointer)||fieldReliefOrders.ContainsKey(t.Pointer)||huntOrders.ContainsKey(t.Pointer))return;
+  RememberCampaign(t);if(!campaignGoals.TryGetValue(t.Pointer,out var s)||s.Id!=t.m_id||s.Faction!=t.m_belongPower)return;
+  var position=t.GetPosition();double day=NEINKOOBJIH.MIPFHCKDJOK;string target=t.m_targetCity+"|"+t.m_tmpTargetCity+"|"+t.m_isEnterCity;
+  if(s.ProgressDay<0||day<s.ProgressDay||s.ProgressTarget!=target||Vector3.Distance(s.ProgressPosition,position)>.1f){s.ProgressDay=day;s.ProgressPosition=position;s.ProgressTarget=target;return;}
+  if(day-s.ProgressDay<DecisionDays(t.m_belongPower))return;
+  double stalled=day-s.ProgressDay;int points=(t.m_listMovePos?.Count??0)+(t.GAANFLKOMKL?.Count??0);
+  s.ProgressDay=day;s.Ordered=false;s.Staging=false;s.CheckedDay=-1;
+  t.ClearTarget(false);t.m_targetCity="";t.m_tmpTargetCity="";t.m_listMovePos?.Clear();t.GAANFLKOMKL?.Clear();t.StartCamp();
+  work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,s).GetEnumerator());
+  Note($"campaign-march-stalled team={t.m_id} previous={target} idleDays={stalled:F3} stalePoints={points} action=reassess-advance-support-partition-return");
  }
  static bool SameCamp(Wo_DeployTeamCtrl t,CampaignGoal s)=>CampIdle(t)&&t.m_id==s.Id&&t.m_belongPower==s.Faction&&CampaignControlled(t,out _)&&campaignGoals.TryGetValue(t.Pointer,out var actual)&&ReferenceEquals(actual,s)&&
   (string.IsNullOrEmpty(t.m_targetCity)||t.m_targetCity==s.Goal||t.m_targetCity==s.OrderTarget);
@@ -171,8 +188,15 @@ public sealed partial class StrategicSupport {
   int id=t?.m_id??-1;long started=Environment.TickCount64;double day=NEINKOOBJIH.MIPFHCKDJOK;
   bool report=Gate("campaign-recovery:"+id,15);
   if(report)Note($"campaign-recovery-start team={id} state={t?.m_deployState} goal={s.Goal} order={s.OrderTarget} returning={s.Returning} ordered={s.Ordered} day={day:F3}");
-  try{foreach(var phase in RecoverCampaignCore(t,s))yield return phase;}
-  finally{if(report&&t&&t.m_id==id)Note($"campaign-recovery-end team={id} elapsedMs={Environment.TickCount64-started} elapsedDays={NEINKOOBJIH.MIPFHCKDJOK-day:F3} state={t.m_deployState} target={t.m_targetCity} entry={t.m_isEnterCity} path={t.m_listMovePos?.Count} follow={t.m_responseToPlayer} war={t.m_warInfo!=null} targetWar={t.m_targetWarInfo!=null} stillIdle={CampIdle(t)} ordered={s.Ordered}");}
+  int steps=0;double cpuMs=0;string lastPhase="start";
+  try{using(var it=RecoverCampaignCore(t,s).GetEnumerator())while(true){
+   long at=System.Diagnostics.Stopwatch.GetTimestamp();bool more;
+   try{more=it.MoveNext();}finally{cpuMs+=(System.Diagnostics.Stopwatch.GetTimestamp()-at)*1000d/System.Diagnostics.Stopwatch.Frequency;}
+   if(!more)break;steps++;lastPhase=it.Current;
+   if(Environment.TickCount64-started>=5000&&Gate("campaign-progress:"+id,5))Note($"campaign-recovery-progress team={id} phase={lastPhase} steps={steps} cpuMs={cpuMs:F2} elapsedMs={Environment.TickCount64-started} queue={work.Count}");
+   yield return lastPhase;
+  }}
+  finally{if(report&&t&&t.m_id==id)Note($"campaign-recovery-end team={id} elapsedMs={Environment.TickCount64-started} elapsedDays={NEINKOOBJIH.MIPFHCKDJOK-day:F3} state={t.m_deployState} target={t.m_targetCity} entry={t.m_isEnterCity} path={t.m_listMovePos?.Count} follow={t.m_responseToPlayer} war={t.m_warInfo!=null} targetWar={t.m_targetWarInfo!=null} stillIdle={CampIdle(t)} ordered={s.Ordered} steps={steps} cpuMs={cpuMs:F2} lastPhase={lastPhase}");}
  }
  static IEnumerable<string> RecoverCampaignCore(Wo_DeployTeamCtrl t,CampaignGoal s){
   if(!SameCamp(t,s)||!CampaignControlled(t,out var f)){
@@ -226,26 +250,24 @@ public sealed partial class StrategicSupport {
   s.Returning=true;
   foreach(var phase in ReturnPartitionSteps(t,s,f))yield return phase;
   if(!SameCamp(t,s))yield break;
-  var choices=new List<(AFAGFHJONFJ City,int Days,bool Enter,double Score)>();
-  // Snapshot before yielding: ownership/capacity/routes are rechecked at commit.
-  var cities=new Il2CppInterop.Runtime.InteropTypes.Arrays.Il2CppReferenceArray<AFAGFHJONFJ>(MICGPAMNDKM.IJPKEMPIFIH.Count);MICGPAMNDKM.IJPKEMPIFIH.Values.CopyTo(cities,0);
-  foreach(var c in cities){
-   if(!SameCamp(t,s))yield break;
-   if(c?.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL&&(!s.RetryAfter.TryGetValue(c.OJPECMNINNA,out var until)||until<=NEINKOOBJIH.MIPFHCKDJOK)&&CampaignRouteDistance(t,c,f,out int days,out double road)){
-    teams=AttackTeams();bool enter=CapacityRoom(c,teams,t)>=TeamTroops(t).Count;
-    if(ReturnSafe(t,c,f,teams,days,enter))choices.Add((c,days,enter,road+(enter?0:1000000000d)));
-   }
-   yield return "campaign-return-target";
-  }
-  foreach(var choice in choices.OrderBy(x=>x.Score)){
-   if(!SameCamp(t,s))yield break;
+  // Preserve admission-first policy, but find the next exact nearest road
+  // lazily. A single indivisible group cannot make useful partitions; it must
+  // not rescan the entire empire again just to choose a safe staging city.
+  foreach(bool enter in new[]{true,false}){
+   var roads=new NearestReturnRoads(t.GetPosition(),f);
+   bool Eligible(AFAGFHJONFJ c)=>(!s.RetryAfter.TryGetValue(c.OJPECMNINNA,out var until)||until<=NEINKOOBJIH.MIPFHCKDJOK)&&ReturnSafe(t,c,f,AttackTeams(),0,enter)&&(!enter||DestinationFoodSafe(c,AttackTeams(),t));
+   while(SameCamp(t,s)){
+   foreach(var phase in roads.Next(()=>SameCamp(t,s),Eligible))yield return "campaign-return-"+phase;
+   var city=roads.City;if(city==null)break;
    teams=AttackTeams();
-   if(!CampaignRoute(t,choice.City,f,out int days)||!ReturnSafe(t,choice.City,f,teams,days,choice.Enter))continue;
+   if(!SameCamp(t,s))yield break;
+   if(!Eligible(city)||!CampaignRoute(t,city,f,out int days)||!ReturnSafe(t,city,f,teams,days,enter))continue;
    // Full cities are staging points only: never dismiss into an overflowing
    // garrison. Retry capacity each day instead of abandoning the army.
-   if(!choice.Enter&&Vector3.Distance(t.GetPosition(),choice.City.BMBMKPGEHBH)<5){if(Gate("campaign-full:"+t.m_id,10))Note($"campaign-wait team={t.m_id} reason=no-compatible-officer-group-capacity city={choice.City.OJPECMNINNA} retry=next-day no-futile-staging-tour=true");yield break;}
-   if(CampaignMove(t,s,choice.City,choice.Enter,reason,days))yield break;
+   if(!enter&&Vector3.Distance(t.GetPosition(),city.BMBMKPGEHBH)<5){if(Gate("campaign-full:"+t.m_id,10))Note($"campaign-wait team={t.m_id} reason=no-compatible-officer-group-capacity city={city.OJPECMNINNA} retry=next-day no-futile-staging-tour=true");yield break;}
+   if(CampaignMove(t,s,city,enter,reason,days))yield break;
    yield return "campaign-return-retry";
+   }
   }
   Note($"campaign-blocked team={t.m_id} goal={s.Goal} reason={reason};no-safe-reachable-return soldiers={t.GetSoldierNum(false)} food={t.GetFood()} retry=next-day");
  }

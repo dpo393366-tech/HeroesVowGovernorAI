@@ -81,20 +81,15 @@ public sealed partial class StrategicSupport {
   }
  }
  static IEnumerable<string> ReturnPartitionSteps(Wo_DeployTeamCtrl t,CampaignGoal goal,MKMOJNAJKJE f){
-  var destinations=new List<(AFAGFHJONFJ City,double Score)>();
-  var snapshot=AttackTeams();
-  foreach(var city in ReturnCities(f)){
-   yield return "return-partition-city";if(!SameCamp(t,goal))yield break;
-   int room=CapacityRoom(city,snapshot,t);if(room<=0||city.GKLIEHCHDLD()||IncomingHostile(city,f))continue;
-   var route=new RoutePlan();foreach(var phase in ReliefPathSteps(t.GetPosition(),city.BMBMKPGEHBH,f,null,true,route)){yield return "return-partition-"+phase;if(!SameCamp(t,goal))yield break;}
-   if(route.Success)destinations.Add((city,route.Length)); // commit rechecks room and route
-
-  }
-  foreach(var item in destinations.OrderBy(x=>x.Score)){
+  var roads=new NearestReturnRoads(t.GetPosition(),f);
+  bool Eligible(AFAGFHJONFJ c)=>c.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL&&ReturnGroupFits(t,CapacityRoom(c,AttackTeams(),t))&&!c.GKLIEHCHDLD()&&!IncomingHostile(c,f);
+  while(SameCamp(t,goal)){
+   foreach(var phase in roads.Next(()=>SameCamp(t,goal),Eligible))yield return "return-partition-"+phase;
+   if(roads.City==null)yield break;
    yield return "return-partition-order";if(!SameCamp(t,goal))yield break;
-   var city=item.City;var teams=AttackTeams();int room=CapacityRoom(city,teams,t),count=TeamTroops(t).Count;
+   var city=roads.City;var teams=AttackTeams();int room=CapacityRoom(city,teams,t),count=TeamTroops(t).Count;
    if(room<=0||!CampaignRoute(t,city,f,out int days)||!ReturnSafe(t,city,f,teams,days,false))continue;
-   if(count<=room){if(DestinationFoodSafe(city,teams,t)&&CampaignMove(t,goal,city,true,"distributed-return-remainder",days))yield break;continue;}
+   if(count<=room){if(DestinationFoodSafe(city,teams,t)&&CampaignMove(t,goal,city,true,"distributed-return-remainder",days)){Note($"return-search team={t.m_id} routesChecked={roads.RoutesChecked} deferredFarCities={roads.Pruned} basis=validated-native-road");yield break;}continue;}
    long limit=Math.Max(2,(long)Math.Floor(t.GetCombatVal()*Math.Min(.9,room/(double)Math.Max(1,count))));
    Wo_DeployTeamCtrl child=null;
    for(int attempt=0;attempt<8&&limit>=2;attempt++){

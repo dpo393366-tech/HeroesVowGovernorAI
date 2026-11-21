@@ -90,7 +90,8 @@
     "BuildingEffectsPolicy.cs",
     "BuildingEffectSnapshot.cs",
     "PopulationPlanning.cs",
-    "ManualOrders.cs"
+    "ManualOrders.cs",
+    "NearestReturnRoads.cs"
   ],
   "StrategicSupportTests": [
     "IntegrationTests.cs",
@@ -158,7 +159,8 @@
     "Queue104Tests.cs",
     "Audit105Tests.cs",
     "ArrivalReportTests.cs",
-    "Campaign112Tests.cs"
+    "Campaign112Tests.cs",
+    "Camp117Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

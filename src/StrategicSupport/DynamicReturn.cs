@@ -21,18 +21,14 @@ public sealed partial class StrategicSupport {
   var world=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;string previous=t.m_targetCity;var start=t.GetPosition();
   string committed=s.Staging?s.OrderTarget:previous;
   bool Valid()=>Ready()&&ReturningMarch(t,s)&&CurrentFaction(f)&&world==MICGPAMNDKM.IJPKEMPIFIH?.Pointer&&t.m_targetCity==previous;
-  var choices=new List<(AFAGFHJONFJ City,double Length)>();
-  foreach(var city in ReturnCities(f)){
-   yield return "return-live-city";if(!Valid())yield break;
-   var teams=AttackTeams();if(!ReturnGroupFits(t,CapacityRoom(city,teams,t))||!SafeLogisticsEndpoint(city,f))continue;
-   var route=new RoutePlan();foreach(var phase in ReliefPathSteps(start,city.BMBMKPGEHBH,f,null,true,route)){yield return "return-live-"+phase;if(!Valid())yield break;}
-   if(route.Success)choices.Add((city,route.Length));
-  }
+  var roads=new NearestReturnRoads(start,f);
   // Rank real roads, not population/officer quotas or an empty city's priority.
   // Capacity and the entire route are checked again immediately before commit.
-  foreach(var item in choices.OrderBy(x=>x.Length).ThenBy(x=>x.City.OJPECMNINNA,StringComparer.Ordinal)){
+  while(Valid()){
+   foreach(var phase in roads.Next(Valid,c=>ReturnGroupFits(t,CapacityRoom(c,AttackTeams(),t))&&SafeLogisticsEndpoint(c,f)))yield return "return-live-"+phase;
+   if(roads.City==null)break;
    yield return "return-live-choice";if(!Valid())yield break;
-   var city=item.City;var teams=AttackTeams();int room=CapacityRoom(city,teams,t),units=TeamTroops(t).Count;
+   var city=roads.City;var teams=AttackTeams();int room=CapacityRoom(city,teams,t),units=TeamTroops(t).Count;
    if(!ReturnGroupFits(t,room)||!CampaignRouteDistance(t,city,f,out int days,out double distance)||!ReturnSafe(t,city,f,teams,days,false))continue;
    if(room>=units&&!DestinationFoodSafe(city,teams,t))continue;
    // A moving origin can change while the yielded scan runs. Keep a still
