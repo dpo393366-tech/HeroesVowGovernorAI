@@ -188,7 +188,7 @@ public sealed partial class StrategicSupport
    team.m_targetFoodDay=Math.Max(foodDays.Value,attackMaxDays.Value+30);
    var order=new AttackOrder{Team=team,Id=team.m_id,City=c.OJPECMNINNA,Target=target.OJPECMNINNA,Faction=f.IBGCLCAIBOL,Enemy=target.LMPMNLLGOEC.LMMNKIOAGLC,Governor=governor,Day=NEINKOOBJIH.MIPFHCKDJOK};
    reason=ValidateAttack(order,c,target,f);
-   if(reason!=null){int actual=team.GetCombatVal();DismissSupport(team);if(reason=="insufficient-attack-power")FailedProbe(c,"city:"+target.Pointer,required);Note($"offense-power-probe city={c.OJPECMNINNA} target={target.OJPECMNINNA} actualAdjusted={actual} requiredAdjusted={required} rejected={reason}");AttackSkip(c,f,AttackTeams(),reason,target);return false;}
+   if(reason!=null){int actual=team.GetCombatVal();Note($"offense-power-probe city={c.OJPECMNINNA} target={target.OJPECMNINNA} team={team.m_id} actualAdjusted={actual} requiredAdjusted={required} soldiers={team.GetSoldierNum(false)} rejected={reason} phase=before-dismiss");DismissSupport(team);FailedAttackProbe(c,target,required,actual,reason);AttackSkip(c,f,AttackTeams(),reason,target);return false;}
    attackOrders[team.Pointer]=order;DayReady("attack-source:"+c.OJPECMNINNA,0,true);
    if(!team.gameObject.activeSelf)team.gameObject.SetActive(true);
    Note($"offense-ordered faction={f.IBGCLCAIBOL} source={c.OJPECMNINNA} target={target.OJPECMNINNA} governor={governor} team={team.m_id} power={team.GetCombatVal()} required={required} soldiers={team.GetSoldierNum(false)} treasury={f.DNOGPFHMOMO} assembly=true");return true;
@@ -258,13 +258,19 @@ public sealed partial class StrategicSupport
    if(Ready()&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(o.City,out var c)&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(o.Target,out var target)&&NEINKOOBJIH.COCMABJFOFH.TryGetValue(o.Faction,out var f))reason=ValidateAttack(o,c,target,f);
    if(reason==null)return true;
   }catch(Exception e){reason="validation-error";Error(e);}
-  attackOrders.Remove(__instance.Pointer);__instance.Dismiss(true,false);Note($"offense-cancel team={o.Id} faction={o.Faction} source={o.City} target={o.Target} reason={reason}");return false;
+  int actualPower=__instance.GetCombatVal();
+  Note($"offense-cancel team={o.Id} faction={o.Faction} source={o.City} target={o.Target} reason={reason} phase=before-dismiss");
+  attackOrders.Remove(__instance.Pointer);DismissSupport(__instance);
+  if(MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(o.City,out var failedSource)&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(o.Target,out var failedTarget)&&failedSource.LMPMNLLGOEC?.LMMNKIOAGLC==o.Faction)
+   FailedAttackProbe(failedSource,failedTarget,AttackDefense(failedTarget,AttackTeams()),actualPower,reason);
+  return false;
  }
  static void RecordDeployResult(Wo_DeployTeamCtrl __instance){
   try {RouteNewRelief(__instance);AfterInterceptDeploy(__instance);NotifyDefense(__instance);if(__instance!=null&&Gate("deploy-result:"+__instance.m_id,30))Note($"native-deploy-result team={__instance.m_id} faction={__instance.m_belongPower} source={__instance.m_assembleCity} target={__instance.m_targetCity} state={__instance.m_deployState} active={__instance.gameObject.activeSelf} tracked={attackOrders.ContainsKey(__instance.Pointer)} departureRequiresLeaveCity=true");}catch(Exception e){Error(e);}
  }
  static void RecordDismissal(Wo_DeployTeamCtrl __instance){
   try{ObserveBattleDispatchDismissal(__instance);}catch(Exception e){Error(e);}
+  try{LogDismissCallsite(__instance);}catch(Exception e){Error(e);}
   if(__instance!=null)fieldReliefOrders.Remove(__instance.Pointer);
   if(__instance!=null){reliefLoans.Remove(__instance.Pointer);coverOrders.Remove(__instance.Pointer);defenseOrders.Remove(__instance.Pointer);NotifyDefense(__instance);capacityOrders.Remove(__instance.Pointer);campaignGoals.Remove(__instance.Pointer);}
   try {if(__instance!=null&&Gate("dismiss-observe:"+__instance.m_id,30))Note($"army-dismiss-observed team={__instance.m_id} faction={__instance.m_belongPower} source={__instance.m_assembleCity} target={__instance.m_targetCity} state={__instance.m_deployState} tracked={attackOrders.ContainsKey(__instance.Pointer)} private={__instance.m_isPrivate} enterCity={__instance.m_isEnterCity}");}catch(Exception e){Error(e);}
@@ -272,7 +278,7 @@ public sealed partial class StrategicSupport
  static void RecordAttackDeparture(Wo_DeployTeamCtrl __instance,AFAGFHJONFJ __0){
   try{
    if(__instance==null||__0==null)return;
-   if(missions.TryGetValue(__instance.Pointer,out var mission)&&mission.Id==__instance.m_id&&mission.Faction==__instance.m_belongPower)mission.Departed=true;
+   if(missions.TryGetValue(__instance.Pointer,out var mission)&&mission.Id==__instance.m_id&&mission.Faction==__instance.m_belongPower&&!mission.Departed){mission.Departed=true;mission.DepartureTick=Environment.TickCount64;mission.DepartureDay=NEINKOOBJIH.MIPFHCKDJOK;mission.DeparturePosition=__instance.GetPosition();}
    NotifyDefense(__instance);
    RememberCampaign(__instance);
    if(capacityOrders.TryGetValue(__instance.Pointer,out var transfer)&&transfer.Id==__instance.m_id){capacityOrders.Remove(__instance.Pointer);Note($"capacity-transfer-departed team={transfer.Id} source={transfer.Source} target={transfer.Target} nativeLeaveCity=true");}

@@ -1,4 +1,4 @@
-using System;using System.Collections.Generic;using System.Linq;
+using System;using System.Collections.Generic;using System.Linq;using UnityEngine;
 public sealed partial class StrategicSupport {
  sealed class RejectedBattleDispatch {
   public IntPtr War;public string Name,Signature,Reason;public double Day,Until,Eta;public int Count;public long Food;
@@ -31,11 +31,19 @@ public sealed partial class StrategicSupport {
   Note($"battle-dispatch-rejected source={c.OJPECMNINNA} faction={c.LMPMNLLGOEC.LMMNKIOAGLC} war={w.HIENOINGBCN} team={teamId} reason={reason} actualEta={eta:F1} retryDay={until:F3} attempt={count} scope=this-city-this-battle");
  }
  static void ObserveBattleDispatchDismissal(Wo_DeployTeamCtrl t){
-  if(!t||!missions.TryGetValue(t.Pointer,out var m)||m.Id!=t.m_id||m.Faction!=t.m_belongPower||m.Departed||m.War==null||m.Name!=m.War.HIENOINGBCN||t.m_warInfo!=null||ManualProtected(t)||string.IsNullOrEmpty(m.ProbeSignature))return;
+  if(!t||!missions.TryGetValue(t.Pointer,out var m)||m.Id!=t.m_id||m.Faction!=t.m_belongPower||m.War==null||m.Name!=m.War.HIENOINGBCN||t.m_warInfo!=null||ManualProtected(t)||string.IsNullOrEmpty(m.ProbeSignature))return;
+  // A LeaveCity callback is not proof of useful travel. Remember immediate
+  // native rollback too, but never blacklist normal arrival, merging, manual
+  // redirection, or a later demobilization after a real journey.
+  if(m.Departed&&(Environment.TickCount64-m.DepartureTick>10000||Environment.TickCount64<m.DepartureTick
+   ||NEINKOOBJIH.MIPFHCKDJOK-m.DepartureDay>1||NEINKOOBJIH.MIPFHCKDJOK<m.DepartureDay
+   ||t.m_deployState!=AKOPKFPKJPP.Expedition||!Same(t.m_targetWarInfo,m.War)||t.m_isEnterCity
+   ||!string.IsNullOrEmpty(t.m_targetCity)||t.m_mergeTarget!=null||t.m_attackTarget!=null
+   ||Vector3.Distance(t.GetPosition(),m.DeparturePosition)>5||Vector3.Distance(t.GetPosition(),m.War.GBHGENNMJCK)<=10))return;
   missions.Remove(t.Pointer);
   if(!MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(m.Source??"",out var c)||c.LMPMNLLGOEC?.LMMNKIOAGLC!=m.Faction)return;
-  RejectBattleDispatch(c,m.War,m.Side,m.Direct,m.ProbeSignature,"native-cancel-before-departure",m.ProbeEta,t.m_id,m.ProbeFood);
-  Note($"battle-departure-cancelled team={t.m_id} source={m.Source} war={m.Name} state={t.m_deployState} target={t.m_targetCity} targetWar={t.m_targetWarInfo?.HIENOINGBCN} power={t.GetCombatVal()} soldiers={t.GetSoldierNum(false)} nativeLeaveCityObserved=false");
+  RejectBattleDispatch(c,m.War,m.Side,m.Direct,m.ProbeSignature,m.Departed?"native-early-dismissal":"native-cancel-before-departure",m.ProbeEta,t.m_id,m.ProbeFood);
+  Note($"battle-departure-cancelled team={t.m_id} source={m.Source} war={m.Name} state={t.m_deployState} target={t.m_targetCity} targetWar={t.m_targetWarInfo?.HIENOINGBCN} power={t.GetCombatVal()} soldiers={t.GetSoldierNum(false)} nativeLeaveCityObserved={m.Departed} moved={Vector3.Distance(t.GetPosition(),m.DeparturePosition):F2} reason=see-dismiss-callsite");
  }
  static void ForgetBattleDispatchRetries(NJHDEHLHENN w){foreach(var key in rejectedBattleDispatches.Where(p=>p.Value.War==w.Pointer).Select(p=>p.Key).ToArray())rejectedBattleDispatches.Remove(key);}
 }

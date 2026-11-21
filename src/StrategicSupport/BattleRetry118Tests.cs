@@ -25,7 +25,7 @@ public static class BattleRetry118Tests {
   NEINKOOBJIH.MIPFHCKDJOK=106;Send(_=>false);Check(source.Calls==2,"second identical failure backs off longer without daily cancellation");
   Setup();var t=Send();Check(t!=null&&source.Calls==1,"native-cancel fixture starts actual mod assembly");NativeCancel(t);
   for(int day=100;day<=102;day++){NEINKOOBJIH.MIPFHCKDJOK=day;Check(Send()==null,"predeparture native cancellation retained on day "+day);}Check(source.Calls==1,"native cancellation memory prevents repeated generation");
-  Setup();t=Send();Call("RecordAttackDeparture",t,source);NativeCancel(t);Check(Field<IDictionary>("rejectedBattleDispatches").Count==0,"normal postdeparture demobilization does not blacklist source");
+  Setup();t=Send();Call("RecordAttackDeparture",t,source);t.Position=war.GBHGENNMJCK;NativeCancel(t);Check(Field<IDictionary>("rejectedBattleDispatches").Count==0,"normal postdeparture arrival demobilization does not blacklist source");
   Setup();t=Send();t.m_id++;Call("RecordDismissal",t);Check(Field<IDictionary>("rejectedBattleDispatches").Count==0,"pooled army identity mismatch cannot reject new source");
   Setup();t=Send();t.m_warInfo=war;Call("RecordDismissal",t);Check(Field<IDictionary>("rejectedBattleDispatches").Count==0,"battle cleanup is not predeparture failure");
   Setup();Send(_=>false);Call("ForgetBattle",war);Check(Field<IDictionary>("rejectedBattleDispatches").Count==0,"battle recycle clears failure records");

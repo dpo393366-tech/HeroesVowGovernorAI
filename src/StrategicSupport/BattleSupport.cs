@@ -21,6 +21,7 @@ public sealed partial class StrategicSupport
         public Wo_DeployTeamCtrl Team;public NJHDEHLHENN War;public int Id,Side;
         public string Name,Faction,Source;public double ReadyAt;
         public bool Direct,Departed;public string ProbeSignature;public double ProbeEta;public long ProbeFood;
+        public long DepartureTick;public double DepartureDay;public Vector3 DeparturePosition;
     }
     static readonly Dictionary<IntPtr,BattleState> battles=new();
     static readonly Dictionary<IntPtr,Mission> missions=new();

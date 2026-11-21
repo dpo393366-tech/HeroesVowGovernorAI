@@ -44,7 +44,7 @@ public sealed partial class StrategicSupport:BasePlugin
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"JFOOAMEIMDO"),prefix:H(nameof(BeforeRecruit)));
             HookRecruitmentQuality(h); HookOfficerSelection(h); HookWorldTiming(h); StartPerformance(h);
         } catch(Exception e) {Note("STARTUP FAILED "+e);h.UnpatchSelf();throw;}
-        Note("Strategic Support 1.5.43 loaded; build=dispatch-retry-r118; camp-r117 retained; per-source battle cancellation memory, exact-road lazy return search, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
+        Note("Strategic Support 1.5.43 loaded; build=dispatch-lifecycle-r119; camp-r117 retained; per-source battle cancellation memory, exact-road lazy return search, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
     }
     static void Error(Exception e){if(Environment.TickCount64<nextError)return;nextError=Environment.TickCount64+30000;Note("ERROR "+e);log.LogWarning(e.ToString());}
     static bool Ready()
