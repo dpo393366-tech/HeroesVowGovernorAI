@@ -91,7 +91,8 @@
     "BuildingEffectSnapshot.cs",
     "PopulationPlanning.cs",
     "ManualOrders.cs",
-    "NearestReturnRoads.cs"
+    "NearestReturnRoads.cs",
+    "BattleDispatchRetry.cs"
   ],
   "StrategicSupportTests": [
     "IntegrationTests.cs",
@@ -160,7 +161,8 @@
     "Audit105Tests.cs",
     "ArrivalReportTests.cs",
     "Campaign112Tests.cs",
-    "Camp117Tests.cs"
+    "Camp117Tests.cs",
+    "BattleRetry118Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

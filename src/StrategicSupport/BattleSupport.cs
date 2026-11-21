@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
@@ -20,7 +20,7 @@ public sealed partial class StrategicSupport
     sealed class Mission {
         public Wo_DeployTeamCtrl Team;public NJHDEHLHENN War;public int Id,Side;
         public string Name,Faction,Source;public double ReadyAt;
-        public bool Direct;
+        public bool Direct,Departed;public string ProbeSignature;public double ProbeEta;public long ProbeFood;
     }
     static readonly Dictionary<IntPtr,BattleState> battles=new();
     static readonly Dictionary<IntPtr,Mission> missions=new();
@@ -49,11 +49,11 @@ public sealed partial class StrategicSupport
     }
     static bool Same(NJHDEHLHENN a,NJHDEHLHENN b)=>a!=null&&b!=null&&a.Pointer==b.Pointer;
     static bool IsDirect(NJHDEHLHENN w)=>Same(Wa_Controller.m_warInfo,w)&&!Wa_Controller.m_isQuiting;
-    static void ResetBattleState(){ResetSupply();emergencyBudgets.Clear();battles.Clear();missions.Clear();directWar=IntPtr.Zero;battleClock=0;nextMissionPoll=0;}
+    static void ResetBattleState(){ResetSupply();rejectedBattleDispatches.Clear();emergencyBudgets.Clear();battles.Clear();missions.Clear();directWar=IntPtr.Zero;battleClock=0;nextMissionPoll=0;}
     static void ForgetBattle(NJHDEHLHENN __instance)
     {
         if(__instance==null)return;
-        battles.Remove(__instance.Pointer);ForgetSupply(__instance);
+        battles.Remove(__instance.Pointer);ForgetSupply(__instance);ForgetBattleDispatchRetries(__instance);
         // Hand any still-travelling army back to native destination/lifecycle handling.
         removeMissions.Clear();foreach(var p in missions)if(Same(p.Value.War,__instance))removeMissions.Add(p.Key);
         foreach(var key in removeMissions)missions.Remove(key);
@@ -223,6 +223,8 @@ public sealed partial class StrategicSupport
         var troops=source.LMPMNLLGOEC.KJPPGIOCDID;if(troops==null)return null;
         long total=0;foreach(var a in troops)if(a!=null)total+=Math.Max(0,a.FGHFOLKBHDL);
         Wo_DeployTeamCtrl team=null;
+        string signature=BattleDispatchSignature(source,w,owner,teams);long sourceFood=source.LMPMNLLGOEC.OEGNGFBCHFL;
+        if(!BattleDispatchReady(source,w,side,direct,signature,arrivalUseful))return null;
         try {
             int requested=(int)Math.Clamp(Math.Ceiling((double)need*Math.Max(1,Power(source))/Math.Max(1,total)),1,int.MaxValue);
             var previousExclusions=battleOriginalReserveExclusions;
@@ -231,19 +233,23 @@ public sealed partial class StrategicSupport
                 // Do not require 60% of that army to remain at home as well.
                 // Later support commitments and all other fronts still count.
                 battleOriginalReserveExclusions=battles.TryGetValue(w.Pointer,out var state)?state.OriginalTeams:null;
+                supportGenerationCreated=false;supportGenerationFailure=null;
                 team=GenerateEmergencyRelief(source,w,requested,estimate,teams,reserved);
             }finally{battleOriginalReserveExclusions=previousExclusions;}
-            if(!team)return null;
-            if(!RouteSeconds(source.BMBMKPGEHBH,w.GBHGENNMJCK,owner,team.GetMoveSpeed(),out double route,BattleTransitRegion(w,owner))){InvalidateBattleRoad(source,w,owner);DismissSupport(team);return null;}
+            if(!team){if(supportGenerationCreated)RejectBattleDispatch(source,w,side,direct,signature,"assembly:"+(supportGenerationFailure??"unknown"),estimate,-1,sourceFood);return null;}
+            if(!RouteSeconds(source.BMBMKPGEHBH,w.GBHGENNMJCK,owner,team.GetMoveSpeed(),out double route,BattleTransitRegion(w,owner))){RejectBattleDispatch(source,w,side,direct,signature,"assembled-route-unavailable",double.PositiveInfinity,team.m_id,sourceFood);InvalidateBattleRoad(source,w,owner);DismissSupport(team);return null;}
             double actual=route+Math.Max(mobilizeSeconds.Value,Math.Max(0,team.GetLeftAssembleDay())*AOHIBKLOAEI.NIOKFCDLGFK());
-            if(actual>maxTravelSeconds.Value||!arrivalUseful(actual)||!RelayFoodSafe(team,source,actual)){InvalidateBattleRoad(source,w,owner);DismissSupport(team);return null;}
+            string rejected=actual>maxTravelSeconds.Value?"arrival-too-late":!arrivalUseful(actual)?"arrival-not-useful":!RelayFoodSafe(team,source,actual)?"journey-food":null;
+            if(rejected!=null){RejectBattleDispatch(source,w,side,direct,signature,rejected,actual,team.m_id,sourceFood);if(rejected=="arrival-too-late")InvalidateBattleRoad(source,w,owner);DismissSupport(team);return null;}
             team.m_targetCity="";team.m_targetWarInfo=w;team.m_isEnterCity=false;
-            missions[team.Pointer]=new Mission{Team=team,Id=team.m_id,War=w,Name=w.HIENOINGBCN,Side=side,Faction=owner.IBGCLCAIBOL,Source=source.OJPECMNINNA,Direct=direct,ReadyAt=battleClock+mobilizeSeconds.Value};
+            int dispatchedId=team.m_id;
+            missions[team.Pointer]=new Mission{Team=team,Id=team.m_id,War=w,Name=w.HIENOINGBCN,Side=side,Faction=owner.IBGCLCAIBOL,Source=source.OJPECMNINNA,Direct=direct,ReadyAt=battleClock+mobilizeSeconds.Value,ProbeSignature=signature,ProbeEta=actual,ProbeFood=sourceFood};
             
             if(!team.gameObject.activeSelf)team.gameObject.SetActive(true);
             // A disabled world hierarchy does not receive OnEnable in direct command.
             // Use the same startup routine once, only for this newly generated army.
             if(direct&&!team.gameObject.activeInHierarchy&&!team.m_isStarting&&team.m_deployState==AKOPKFPKJPP.Assemble)team.StartDeploy();
+            if(!team||team.m_id!=dispatchedId||team.m_belongPower!=owner.IBGCLCAIBOL||!missions.TryGetValue(team.Pointer,out var committed)||committed.Id!=dispatchedId)return null;
             BackfillAfterCommit(source,w.IJGLCFJOOIK,owner);
             return team;
         }catch{if(team){missions.Remove(team.Pointer);try{DismissSupport(team);}catch{}}throw;}

@@ -264,6 +264,7 @@ public sealed partial class StrategicSupport
   try {RouteNewRelief(__instance);AfterInterceptDeploy(__instance);NotifyDefense(__instance);if(__instance!=null&&Gate("deploy-result:"+__instance.m_id,30))Note($"native-deploy-result team={__instance.m_id} faction={__instance.m_belongPower} source={__instance.m_assembleCity} target={__instance.m_targetCity} state={__instance.m_deployState} active={__instance.gameObject.activeSelf} tracked={attackOrders.ContainsKey(__instance.Pointer)} departureRequiresLeaveCity=true");}catch(Exception e){Error(e);}
  }
  static void RecordDismissal(Wo_DeployTeamCtrl __instance){
+  try{ObserveBattleDispatchDismissal(__instance);}catch(Exception e){Error(e);}
   if(__instance!=null)fieldReliefOrders.Remove(__instance.Pointer);
   if(__instance!=null){reliefLoans.Remove(__instance.Pointer);coverOrders.Remove(__instance.Pointer);defenseOrders.Remove(__instance.Pointer);NotifyDefense(__instance);capacityOrders.Remove(__instance.Pointer);campaignGoals.Remove(__instance.Pointer);}
   try {if(__instance!=null&&Gate("dismiss-observe:"+__instance.m_id,30))Note($"army-dismiss-observed team={__instance.m_id} faction={__instance.m_belongPower} source={__instance.m_assembleCity} target={__instance.m_targetCity} state={__instance.m_deployState} tracked={attackOrders.ContainsKey(__instance.Pointer)} private={__instance.m_isPrivate} enterCity={__instance.m_isEnterCity}");}catch(Exception e){Error(e);}
@@ -271,6 +272,7 @@ public sealed partial class StrategicSupport
  static void RecordAttackDeparture(Wo_DeployTeamCtrl __instance,AFAGFHJONFJ __0){
   try{
    if(__instance==null||__0==null)return;
+   if(missions.TryGetValue(__instance.Pointer,out var mission)&&mission.Id==__instance.m_id&&mission.Faction==__instance.m_belongPower)mission.Departed=true;
    NotifyDefense(__instance);
    RememberCampaign(__instance);
    if(capacityOrders.TryGetValue(__instance.Pointer,out var transfer)&&transfer.Id==__instance.m_id){capacityOrders.Remove(__instance.Pointer);Note($"capacity-transfer-departed team={transfer.Id} source={transfer.Source} target={transfer.Target} nativeLeaveCity=true");}

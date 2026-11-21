@@ -29,6 +29,7 @@ public sealed partial class StrategicSupport
     static Wo_DeployTeamCtrl GenerateSupport(AFAGFHJONFJ city,int requested,
         List<Wo_DeployTeamCtrl> teams,HashSet<IntPtr> reserved)
     {
+        supportGenerationFailure=null;supportGenerationCreated=false;
         var previous=transactionWaves;transactionWaves=new();var started=System.Diagnostics.Stopwatch.GetTimestamp();
         try{return GenerateSupportCore(city,requested,teams,reserved);}
         finally{transactionWaves=previous;RecordPhaseCost("native/support-selection",(System.Diagnostics.Stopwatch.GetTimestamp()-started)*1000d/System.Diagnostics.Stopwatch.Frequency);}
@@ -36,7 +37,7 @@ public sealed partial class StrategicSupport
     static Wo_DeployTeamCtrl GenerateSupportCore(AFAGFHJONFJ city,int requested,
         List<Wo_DeployTeamCtrl> teams,HashSet<IntPtr> reserved)
     {
-        Wo_DeployTeamCtrl Fail(string reason){if(Gate("assembly-block:"+city.OJPECMNINNA+":"+reason.Split(' ')[0],30))Note($"assembly-block city={city.OJPECMNINNA} faction={city.LMPMNLLGOEC?.LMMNKIOAGLC} purpose={(capacityTransferLimit>0?"capacity-transfer":offenseGenerating?"attack":rebalancing?"officer-transfer":"support")} reason={reason}");return null;}
+        Wo_DeployTeamCtrl Fail(string reason){supportGenerationFailure=reason;if(Gate("assembly-block:"+city.OJPECMNINNA+":"+reason.Split(' ')[0],30))Note($"assembly-block city={city.OJPECMNINNA} faction={city.LMPMNLLGOEC?.LMMNKIOAGLC} purpose={(capacityTransferLimit>0?"capacity-transfer":offenseGenerating?"attack":rebalancing?"officer-transfer":"support")} reason={reason}");return null;}
         MKMOJNAJKJE faction;if(!(offenseGenerating?Eligible(city,out faction):DistributionCity(city,out faction)))return Fail("source-not-authorized");
         if((offenseGenerating||rebalancing||capacityTransferLimit>0)&&CoverPlanning(faction.IBGCLCAIBOL))return Fail("regional-cover-planning");
         NormalizeTroopReferences(city);
@@ -109,6 +110,7 @@ public sealed partial class StrategicSupport
             team=TimedAI(faction,"support-native-generator",()=>city.JLDJEOJJLDM(0,Math.Max(1,requested),capacityTransferFoodDays>0?capacityTransferFoodDays:foodDays.Value,false,false));
         }finally {row.KJPPGIOCDID=original;generatingHomeOfficers=previousOfficers;generatingHomeCity=previousCity;generatingOfficerPoolLimit=previousLimit;transactionWaves?.Clear();}
         if(!team)return Fail($"native-generator-empty selected={selected.Count} requested={requested} homeOfficers={officers.Count}");
+        supportGenerationCreated=true;
         bool valid=row.LMMNKIOAGLC==sourceFaction&&row.IPJHOOJBCKI==sourceGovernor&&team.m_belongPower==sourceFaction
             &&!team.IncludePlayer()&&!team.m_isPrivate&&team.m_listHero!=null&&team.m_listHero.Count>0&&team.m_dicDeployArmy!=null;
         var sentOfficers=new HashSet<string>();

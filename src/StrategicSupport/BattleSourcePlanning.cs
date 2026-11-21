@@ -55,7 +55,7 @@ public sealed partial class StrategicSupport {
    state.SideNext[side]=Math.Min(state.SideNext[side],now+DecisionInterval(faction,BattleRetryDelay(assessSeconds.Value,AOHIBKLOAEI.NIOKFCDLGFK())));
    var sent=DispatchBattle(c,w,side,need,eta,direct,teams,reserved,actual=>ReinforcementTimeline.Need(own,enemyCount,loss.FriendlyLoss,loss.EnemyLoss,actual,Math.Max(actual,horizon),friends,enemies,battleCoverage.Value,0,out _,out _)>0);
    if(!sent){Block("assembly-or-route-rejected");continue;}
-   Note($"battle-support sourceGovernor={c.LMPMNLLGOEC.IPJHOOJBCKI} targetGovernor={w.IJGLCFJOOIK?.LMPMNLLGOEC?.IPJHOOJBCKI} war={w.HIENOINGBCN} faction={faction} source={c.OJPECMNINNA} own={own} enemy={enemyCount} lossPerSec={loss.FriendlyLoss:F1} enemyLossPerSec={loss.EnemyLoss:F1} etaEstimate={eta:F1} needSoldiers={need} sentSoldiers={sent.GetSoldierNum(false)} roadRank={rank} nearerResults=[{string.Join(";",skipped)}]");
+   Note($"battle-support team={sent.m_id} sourceGovernor={c.LMPMNLLGOEC.IPJHOOJBCKI} targetGovernor={w.IJGLCFJOOIK?.LMPMNLLGOEC?.IPJHOOJBCKI} war={w.HIENOINGBCN} faction={faction} source={c.OJPECMNINNA} own={own} enemy={enemyCount} lossPerSec={loss.FriendlyLoss:F1} enemyLossPerSec={loss.EnemyLoss:F1} etaEstimate={eta:F1} needSoldiers={need} sentSoldiers={sent.GetSoldierNum(false)} roadRank={rank} departureRequiresLeaveCity=true nearerResults=[{string.Join(";",skipped)}]");
    skipped.Add(c.OJPECMNINNA+":dispatched");
   }
  }
