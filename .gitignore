@@ -10,3 +10,4 @@ src/TreasuryAwards/tests/Core.cs
 **/settings-test/
 **/negative-control-*/
 installer/payload/
+tests/fixture-*/

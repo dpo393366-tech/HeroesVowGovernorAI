@@ -104,7 +104,7 @@ public sealed partial class StrategicSupport {
     missions[t.Pointer]=new(){Team=t,Id=t.m_id,War=best,Name=best.HIENOINGBCN,Side=side,Faction=f.IBGCLCAIBOL,Source=t.m_assembleCity,Direct=IsDirect(best),ReadyAt=battleClock};
     Note($"surplus-redirect team={t.m_id} from={old} to={best.HIENOINGBCN} eta={bestEta:F1} enemyArrivalsIncluded=true");
    }else if(best==null){
-    missions.Remove(t.Pointer);t.ClearTarget(false);t.StartCamp();var goal=new CampaignGoal{Id=t.m_id,Faction=f.IBGCLCAIBOL,Goal=t.m_assembleCity,Returning=true};campaignGoals[t.Pointer]=goal;
+    missions.Remove(t.Pointer);t.ClearTarget(false);var goal=new CampaignGoal{Id=t.m_id,Faction=f.IBGCLCAIBOL,Goal=t.m_assembleCity,Returning=true};campaignGoals[t.Pointer]=goal;t.StartCamp();
     work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,goal).GetEnumerator());Note($"surplus-return team={t.m_id} from={old} reason=present-forces-cover-all-enemy-arrivals action=capacity-safe-distributed-return");
    }
   }
@@ -195,7 +195,7 @@ public sealed partial class StrategicSupport {
   if(engaged!=null&&t.m_deployState==AKOPKFPKJPP.Assemble)return;
   if(order.Enemy.m_id!=order.EnemyId||order.Protected.m_id!=order.ProtectedId||!FieldThreat(order.Enemy,f,out var victim)||victim.Pointer!=order.Protected.Pointer){
    fieldReliefOrders.Remove(t.Pointer);if(t.m_deployState==AKOPKFPKJPP.Assemble){DismissSupport(t);return;}
-   t.ClearTarget(false);t.StartCamp();var goal=new CampaignGoal{Id=t.m_id,Faction=order.Faction,Goal=t.m_assembleCity,Returning=true};campaignGoals[t.Pointer]=goal;work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,goal).GetEnumerator());return;
+   t.ClearTarget(false);var goal=new CampaignGoal{Id=t.m_id,Faction=order.Faction,Goal=t.m_assembleCity,Returning=true};campaignGoals[t.Pointer]=goal;t.StartCamp();work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,goal).GetEnumerator());return;
   }
   if(t.m_deployState==AKOPKFPKJPP.Assemble)return;
   if(AIGate("field-repath:"+t.m_id,order.Faction,2)&&((t.m_listMovePos?.Count??0)==0||Vector3.Distance(t.m_listMovePos[t.m_listMovePos.Count-1],order.Enemy.GetPosition())>Math.Max(2,t.GetMoveSpeed()*2)))InstallFieldRelief(t,order.Enemy,order.Protected,f);

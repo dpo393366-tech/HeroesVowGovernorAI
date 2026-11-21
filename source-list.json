@@ -157,7 +157,8 @@
     "Extreme103Tests.cs",
     "Queue104Tests.cs",
     "Audit105Tests.cs",
-    "ArrivalReportTests.cs"
+    "ArrivalReportTests.cs",
+    "Campaign112Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

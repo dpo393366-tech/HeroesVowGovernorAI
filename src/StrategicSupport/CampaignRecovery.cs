@@ -99,8 +99,8 @@ public sealed partial class StrategicSupport {
    double day=Math.Floor((double)NEINKOOBJIH.MIPFHCKDJOK);
    int period=DecisionDays(t.m_belongPower);
    if(!CampIdle(t)||(s.CheckedPeriod==period&&s.CheckedDay>=0&&day>=s.CheckedDay&&day-s.CheckedDay<period))return;
-   s.CheckedDay=day;s.CheckedPeriod=period;
-   work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,s).GetEnumerator());
+   // Mark a decision day only after the queue actually accepts the work.
+   if(work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,s).GetEnumerator())){s.CheckedDay=day;s.CheckedPeriod=period;}
   }catch(Exception e){Error(e);}
  }
  static bool SameCamp(Wo_DeployTeamCtrl t,CampaignGoal s)=>CampIdle(t)&&t.m_id==s.Id&&t.m_belongPower==s.Faction&&CampaignControlled(t,out _)&&campaignGoals.TryGetValue(t.Pointer,out var actual)&&ReferenceEquals(actual,s)&&
@@ -160,6 +160,14 @@ public sealed partial class StrategicSupport {
   return CampaignMove(t,s,target,false,reason,days);
  }
  static IEnumerable<string> RecoverCampaign(Wo_DeployTeamCtrl t,CampaignGoal s){
+  // StartCamp synchronously invokes our postfix. A caller may then replace
+  // its provisional orphan goal with an explicit return goal while the same
+  // queue key is already pending. Resolve that handoff at execution time.
+  // Never transfer a queued task to a recycled object or a new manual order.
+  if(t&&t.m_id==s.Id&&t.m_belongPower==s.Faction&&CampaignControlled(t,out _)&&campaignGoals.TryGetValue(t.Pointer,out var latest)&&latest.Id==s.Id&&latest.Faction==s.Faction&&!ReferenceEquals(latest,s)){
+   if(Gate("campaign-handoff:"+t.m_id,15))Note($"campaign-goal-handoff team={t.m_id} previous={s.Goal} current={latest.Goal} returning={latest.Returning} reason=new-intent-before-queued-work");
+   s=latest;
+  }
   int id=t?.m_id??-1;long started=Environment.TickCount64;double day=NEINKOOBJIH.MIPFHCKDJOK;
   bool report=Gate("campaign-recovery:"+id,15);
   if(report)Note($"campaign-recovery-start team={id} state={t?.m_deployState} goal={s.Goal} order={s.OrderTarget} returning={s.Returning} ordered={s.Ordered} day={day:F3}");
@@ -167,7 +175,10 @@ public sealed partial class StrategicSupport {
   finally{if(report&&t&&t.m_id==id)Note($"campaign-recovery-end team={id} elapsedMs={Environment.TickCount64-started} elapsedDays={NEINKOOBJIH.MIPFHCKDJOK-day:F3} state={t.m_deployState} target={t.m_targetCity} entry={t.m_isEnterCity} path={t.m_listMovePos?.Count} follow={t.m_responseToPlayer} war={t.m_warInfo!=null} targetWar={t.m_targetWarInfo!=null} stillIdle={CampIdle(t)} ordered={s.Ordered}");}
  }
  static IEnumerable<string> RecoverCampaignCore(Wo_DeployTeamCtrl t,CampaignGoal s){
-  if(!SameCamp(t,s)||!CampaignControlled(t,out var f))yield break;
+  if(!SameCamp(t,s)||!CampaignControlled(t,out var f)){
+   if(t&&Gate("campaign-skip:"+t.m_id,15))Note($"campaign-recovery-skipped team={t.m_id} idle={CampIdle(t)} controlled={CampaignControlled(t,out _)} sameIdentity={t.m_id==s.Id&&t.m_belongPower==s.Faction} currentGoal={campaignGoals.TryGetValue(t.Pointer,out var current)&&ReferenceEquals(current,s)} manual={ManualProtected(t)} state={t.m_deployState} target={t.m_targetCity} intended={s.Goal} path={t.m_listMovePos?.Count}");
+   yield break;
+  }
   foreach(var phase in AftermathHomeSteps(t,s,f))yield return phase;
   if(!SameCamp(t,s))yield break;
   if(!s.Returning)foreach(var phase in CampBattleSteps(t,s,f))yield return phase;

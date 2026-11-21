@@ -25,6 +25,11 @@ public sealed partial class StrategicSupport {
   &&h.LMPMNLLGOEC.LMMNKIOAGLC==c.LMPMNLLGOEC.LMMNKIOAGLC&&h.LMPMNLLGOEC.CNOMNBCPJDI==c.OJPECMNINNA
   &&h.OGPEJIEHDAN!=null&&(h.OGPEJIEHDAN.HFBAJIGHOAF==GCPCLLMKIMM.None||h.OGPEJIEHDAN.HFBAJIGHOAF==GCPCLLMKIMM.Technology||h.OGPEJIEHDAN.HFBAJIGHOAF==GCPCLLMKIMM.PrivateMilitary)
   &&h.OJPECMNINNA!=NEINKOOBJIH.OPIKIHPNCIP&&NEINKOOBJIH.AOPJBNBGPLP?.Contains(h.OJPECMNINNA)!=true;
+ static string AssignedOfficerCity(CLAGKDECFID h,MKMOJNAJKJE f){
+  if(h?.LMPMNLLGOEC?.LMMNKIOAGLC!=f.IBGCLCAIBOL||h.GMILGFFJOIL||(int)h.HFBAJIGHOAF>1||h.OJPECMNINNA==NEINKOOBJIH.OPIKIHPNCIP)return null;
+  string id=h.OGPEJIEHDAN?.HFBAJIGHOAF==GCPCLLMKIMM.CityMove?h.OGPEJIEHDAN.NHKNHHIBOGK:h.LMPMNLLGOEC.CNOMNBCPJDI;
+  return !string.IsNullOrEmpty(id)&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(id,out var c)&&c.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL?id:null;
+ }
  static bool MayorCandidate(CLAGKDECFID h,AFAGFHJONFJ c,List<AFAGFHJONFJ> owned)=>RelocationHome(h,c)&&h.OGPEJIEHDAN.HFBAJIGHOAF==GCPCLLMKIMM.None&&h.OJPECMNINNA!=c.LMPMNLLGOEC.LMMNKIOAGLC
    &&!owned.Any(x=>x.LMPMNLLGOEC.IPJHOOJBCKI==h.OJPECMNINNA||x.LMPMNLLGOEC.BKENJPNKMGI==h.OJPECMNINNA);
  static bool AdministrativeCandidate(CLAGKDECFID h,AFAGFHJONFJ c,List<AFAGFHJONFJ> owned)=>AdministrativeCandidateIndexed(h,c,owned,null);
@@ -58,13 +63,14 @@ public sealed partial class StrategicSupport {
   // Index once per assessment; never re-scan the whole faction in sorting,
   // candidate comparisons or reporting. Refresh the two affected cities in
   // bounded slices before issuing each command, including native arrivals.
-  var homes=new Dictionary<string,List<CLAGKDECFID>>();var arrivals=new Dictionary<string,List<CLAGKDECFID>>();
+  var homes=new Dictionary<string,List<CLAGKDECFID>>();var arrivals=new Dictionary<string,List<CLAGKDECFID>>();var assigned=new Dictionary<string,int>();
   void Add(Dictionary<string,List<CLAGKDECFID>> map,string id,CLAGKDECFID h){if(string.IsNullOrEmpty(id))return;if(!map.TryGetValue(id,out var list))map[id]=list=new();list.Add(h);}
   foreach(var h in heroes){
    if(probes++%8==0){yield return "relocation-index";if(!Valid())yield break;}
    var id=h.LMPMNLLGOEC?.CNOMNBCPJDI;
    if(id!=null&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(id,out var city)&&RelocationHome(h,city))Add(homes,id,h);
    if(h.OGPEJIEHDAN?.HFBAJIGHOAF==GCPCLLMKIMM.CityMove)Add(arrivals,h.OGPEJIEHDAN.NHKNHHIBOGK,h);
+   string planned=AssignedOfficerCity(h,f);if(planned!=null){assigned.TryGetValue(planned,out int count);assigned[planned]=count+1;}
   }
   List<CLAGKDECFID> Home(AFAGFHJONFJ city)=>homes.TryGetValue(city.OJPECMNINNA,out var list)?list:new();
   List<CLAGKDECFID> Arriving(AFAGFHJONFJ city)=>arrivals.TryGetValue(city.OJPECMNINNA,out var list)?list:new();
@@ -83,7 +89,8 @@ public sealed partial class StrategicSupport {
    }else if(best==null)Note($"mayor-blocked city={c.OJPECMNINNA} reason=no-local-idle-candidate home={Home(c).Count} arriving={Arriving(c).Count}");
   }
   if(!rebalanceGarrisons.Value||cities.Count<2)yield break;
-  int total=cities.Sum(c=>Home(c).Count+Arriving(c).Count);
+  int Assigned(AFAGFHJONFJ city)=>assigned.TryGetValue(city.OJPECMNINNA,out int count)?count:0;
+  int total=cities.Sum(c=>Assigned(c));
   int fair=(total+cities.Count-1)/cities.Count,sent=0;
   var tiers=cities.ToDictionary(c=>c.OJPECMNINNA,c=>BorderTier(c,f));
   var vulnerable=cities.ToDictionary(c=>c.OJPECMNINNA,c=>OccupationVulnerable(c));
@@ -99,7 +106,8 @@ public sealed partial class StrategicSupport {
     yield return "relocation-target";if(!Valid())yield break;
     if(sent>=batchLimit)break;if(!StaffingDestination(target,f)||target.GKLIEHCHDLD())continue;
     var at=Home(target);var incoming=Arriving(target);int wanted=quotas[target.OJPECMNINNA];
-    if(at.Count+incoming.Count>=wanted)continue;
+    bool urgent=vulnerable[target.OJPECMNINNA]||IncomingHostile(target,f);
+    if(!OfficerDeploymentPolicy.NeedsRelocation(at.Count+incoming.Count,Assigned(target),wanted,urgent))continue;
     AFAGFHJONFJ source=null;CLAGKDECFID chosen=null;double bestGain=double.NegativeInfinity;int keep=0,days=0;var rejected=new Dictionary<string,int>();
     void Reject(string why){rejected.TryGetValue(why,out int n);rejected[why]=n+1;}
     foreach(var candidateCity in cities){
@@ -132,11 +140,12 @@ public sealed partial class StrategicSupport {
     var currentCorridor=new List<AFAGFHJONFJ>();foreach(var phase in CapacityDestinationSteps(source,f,currentCorridor)){yield return phase;if(!Valid())yield break;}
     corridorPlans[source.Pointer]=new HashSet<IntPtr>(currentCorridor.Select(n=>n.Pointer));
     if(!corridorPlans[source.Pointer].Contains(target.Pointer))continue;
-    var freshSource=new List<CLAGKDECFID>();var freshTarget=new List<CLAGKDECFID>();var freshArrivals=new List<CLAGKDECFID>();
+    var freshSource=new List<CLAGKDECFID>();var freshTarget=new List<CLAGKDECFID>();var freshArrivals=new List<CLAGKDECFID>();int freshAssigned=0;
     foreach(var h in heroes){
      if(probes++%8==0){yield return "relocation-revalidate";if(!Valid())yield break;}
      if(RelocationHome(h,source))freshSource.Add(h);
      if(RelocationHome(h,target))freshTarget.Add(h);
+     if(AssignedOfficerCity(h,f)==target.OJPECMNINNA)freshAssigned++;
      if(h.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL&&!h.GMILGFFJOIL&&h.OGPEJIEHDAN?.HFBAJIGHOAF==GCPCLLMKIMM.CityMove&&h.OGPEJIEHDAN.NHKNHHIBOGK==target.OJPECMNINNA)freshArrivals.Add(h);
     }
     homes[source.OJPECMNINNA]=freshSource;homes[target.OJPECMNINNA]=freshTarget;arrivals[target.OJPECMNINNA]=freshArrivals;
@@ -150,7 +159,7 @@ public sealed partial class StrategicSupport {
      .Concat(freshArrivals.Where(h=>h.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL&&!h.GMILGFFJOIL&&h.OGPEJIEHDAN?.HFBAJIGHOAF==GCPCLLMKIMM.CityMove&&h.OGPEJIEHDAN.NHKNHHIBOGK==target.OJPECMNINNA))
      .GroupBy(h=>h.OJPECMNINNA).Select(g=>g.First()).ToList();
     keep=Math.Max(keep,OfficerDemand(source,f,source.LMPMNLLGOEC.KJPPGIOCDID?.Count??0));
-    if(sourceNow.Count<=keep||targetNow.Count>=wanted)continue;
+    if(sourceNow.Count<=keep||!OfficerDeploymentPolicy.NeedsRelocation(targetNow.Count,freshAssigned,wanted,OccupationVulnerable(target)||IncomingHostile(target,f)))continue;
     double checkedGain=OfficerBalancePolicy.Gain(Ratings(sourceNow),Ratings(targetNow),cache[chosen.OJPECMNINNA]);if(!double.IsFinite(checkedGain))continue;
     // Native independent CityMove, one command per hero, many commands per
     // assessment; no teleport, and no army or troop capacity prerequisite.
@@ -158,7 +167,7 @@ public sealed partial class StrategicSupport {
     bool started=chosen.OGPEJIEHDAN?.HFBAJIGHOAF==GCPCLLMKIMM.CityMove&&chosen.OGPEJIEHDAN.NHKNHHIBOGK==target.OJPECMNINNA;
     if(started)next["officer-balance:"+chosen.OJPECMNINNA]=Environment.TickCount64+300000;
     Note($"officer-relocation source={source.OJPECMNINNA} target={target.OJPECMNINNA} sourceGovernor={source.LMPMNLLGOEC.IPJHOOJBCKI} targetGovernor={target.LMPMNLLGOEC.IPJHOOJBCKI} crossDistrict={source.LMPMNLLGOEC.IPJHOOJBCKI!=target.LMPMNLLGOEC.IPJHOOJBCKI} officer={chosen.OJPECMNINNA} travelDays={days} abilityGain={checkedGain:F4} started={started} gameDay={NEINKOOBJIH.MIPFHCKDJOK:F4} paused={AEHAGJAKNEK.PAKENCLGOHK} independentOfTroops=true sourceBefore={sourceNow.Count} targetProjectedBefore={targetNow.Count} wanted={wanted} targetTier={tiers[target.OJPECMNINNA]} occupationPriority={vulnerable[target.OJPECMNINNA]}");
-    if(started){Home(source).Remove(chosen);Add(arrivals,target.OJPECMNINNA,chosen);sent++;progress=true;}yield return "relocation-commit";if(!Valid())yield break;
+    if(started){Home(source).Remove(chosen);Add(arrivals,target.OJPECMNINNA,chosen);assigned[source.OJPECMNINNA]=Math.Max(0,Assigned(source)-1);assigned[target.OJPECMNINNA]=freshAssigned+1;sent++;progress=true;}yield return "relocation-commit";if(!Valid())yield break;
    }
   }
   Note($"officer-relocation-batch faction={f.IBGCLCAIBOL} sent={sent} fairTarget={fair} initialAvailable={total} cities={cities.Count} reason={(sent>=batchLimit?"work-limit":"balanced-or-safety-blocked")} projected=[{string.Join(";",cities.Select(c=>c.OJPECMNINNA+":"+Home(c).Count+"+"+Arriving(c).Count))}]");
