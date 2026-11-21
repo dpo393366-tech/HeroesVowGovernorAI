@@ -14,9 +14,13 @@
     {
       "path": "BepInEx/plugins/HeroesVowSettings.dll",
       "sha256": "EF5C2B97D9E32928B82DE80467BD145793DEDEFF4786B14D5F23A7DC20674C38"
+    },
+    {
+      "path": "BepInEx/patchers/HeroesVowGovernorAI/GovernorAutoUpdate.dll",
+      "sha256": "20DB82A0FCA74B094285ECD8503E374EB818B260B289031D84428A46ED384148"
     }
   ],
-  "installerRevision": 2,
+  "installerRevision": 3,
   "testedMetadataHash": "2196A777E090C6BEEF816EC604C0A417A3F0EC18111023CD30858FF88A6E397D",
   "loader": {
     "version": "6.0.0-be.788",

@@ -39,18 +39,24 @@ try {
  foreach($f in $m.files){WriteFile $existing $f.path 'unknown-old-module'}
  WriteFile $existing 'BepInEx/plugins/old/StrategicSupport.dll' 'duplicate-one'
  WriteFile $existing 'BepInEx/plugins/older/StrategicSupport.dll' 'duplicate-two'
+ WriteFile $existing 'BepInEx/cache/HeroesVowGovernorUpdate/pending.json' 'interrupted-automatic-update'
+ WriteFile $existing 'BepInEx/cache/HeroesVowGovernorUpdate/installed.json' 'previous-automatic-receipt'
  Run $existing install $PackageDir 'missing-archive-is-not-needed.zip'
  Assert ([IO.File]::ReadAllText((Join-Path $existing 'BepInEx/core/BepInEx.Unity.IL2CPP.dll')) -eq 'custom-existing-loader') 'existing loader overwritten'
  Assert ([IO.File]::ReadAllText((Join-Path $existing doorstop_config.ini)) -eq 'custom-doorstop-settings') 'existing doorstop overwritten'
  Assert (@(Get-ChildItem (Join-Path $existing BepInEx/plugins) -Filter StrategicSupport.dll -Recurse).Count -eq 1) 'duplicate modules remain'
  foreach($f in $m.files){Assert ((Hash (Join-Path $existing $f.path)) -eq $f.sha256) 'unknown old module blocked upgrade'}
  $backups=@(Get-ChildItem (Join-Path $existing BepInEx/independent-backups) -Filter '*.bak' -Recurse)
- Assert ($backups.Count -eq 5) 'distinct duplicate backups missing'
+ Assert ($backups.Count -eq ($m.files.Count+4)) 'distinct module, duplicate and update metadata backups missing'
+ Assert (!(Test-Path (Join-Path $existing 'BepInEx/cache/HeroesVowGovernorUpdate/pending.json'))) 'manual install left stale automatic transaction'
+ Assert (!(Test-Path (Join-Path $existing 'BepInEx/cache/HeroesVowGovernorUpdate/installed.json'))) 'manual install left stale automatic receipt'
  Assert (@($backups | Where-Object {[IO.File]::ReadAllText($_.FullName) -in @('duplicate-one','duplicate-two')}).Count -eq 2) 'duplicate contents lost'
+ WriteFile $existing 'BepInEx/cache/HeroesVowGovernorUpdate/pending.json' 'interrupted-before-remove'
  Run $existing remove
  foreach($f in $m.files){Assert (!(Test-Path (Join-Path $existing $f.path))) 'remove missed module'}
  Assert (Test-Path (Join-Path $existing BepInEx/core/BepInEx.Unity.IL2CPP.dll)) 'remove deleted loader'
  Assert (Test-Path (Join-Path $existing BepInEx/plugins/Unrelated.dll)) 'unrelated plugin removed'
+ Assert (!(Test-Path (Join-Path $existing 'BepInEx/cache/HeroesVowGovernorUpdate/pending.json'))) 'remove left stale automatic transaction'
  Write-Output 'PASS existing loader preserved, version gates removed, duplicates backed up, removal scoped'
 
  $rollback=Game rollback

@@ -50,15 +50,18 @@ try {
  CheckStopped
  # No game metadata hash or old-plugin allowlist gate.
  foreach($item in $manifest.files){
-  if($item.path -notmatch '^BepInEx/plugins/(?:[A-Za-z0-9_-]+/)?[A-Za-z0-9_-]+\.dll$'){throw '모드 대상 경로가 올바르지 않습니다.'}
+  if($item.path -notmatch '^BepInEx/plugins/(?:[A-Za-z0-9_-]+/)?[A-Za-z0-9_-]+\.dll$' -and $item.path -ne 'BepInEx/patchers/HeroesVowGovernorAI/GovernorAutoUpdate.dll'){throw '모드 대상 경로가 올바르지 않습니다.'}
   $dest=SafePath $item.path;$file=[IO.Path]::GetFileName($dest)
   $src=Join-Path (Join-Path $PSScriptRoot 'payload') $file
   if($Action -eq 'install' -and (Digest $src) -ne $item.sha256){throw "설치 파일이 손상되었습니다: $file"}
-  foreach($duplicate in @(PluginCopies $file)){
+  foreach($duplicate in @(if($item.path.StartsWith('BepInEx/plugins/')){PluginCopies $file})){
    if($duplicate -ine $dest){AddPlan $duplicate.Substring($root.Length).Replace('\','/') '' '' 'remove'}
   }
   if($Action -eq 'install'){AddPlan $item.path $src $item.sha256 'write'}else{AddPlan $item.path '' '' 'remove'}
  }
+ # A manual install/remove supersedes an interrupted automatic transaction.
+ # Back up its metadata with the normal transaction; keep all DLL backups.
+ foreach($cache in @('pending.json','installed.json')){AddPlan ('BepInEx/cache/HeroesVowGovernorUpdate/'+$cache) '' '' 'remove'}
  $needLoader=$Action -eq 'install' -and !(Test-Path -LiteralPath (SafePath 'BepInEx/core/BepInEx.Unity.IL2CPP.dll'))
  if($Action -eq 'install'){
   if(!$needLoader){Write-Host '기존 BepInEx IL2CPP를 사용합니다. 로더와 설정은 변경하지 않습니다.'}

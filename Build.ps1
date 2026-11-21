@@ -13,4 +13,8 @@ foreach($component in 'StrategicSupport','TreasuryAwards','Settings'){
   Invoke-HVCsc ($options+$native+@($spec.$component))
  }finally{Pop-Location}
 }
-Write-Output 'Built all three modules. No game files were changed.'
+Push-Location (Join-Path $PSScriptRoot 'src/Updater')
+try {
+ Invoke-HVCsc @('-optimize+','-deterministic','-target:library','-out:GovernorAutoUpdate.dll',('-r:'+(Join-Path $GameDir 'BepInEx/core/BepInEx.Core.dll')),('-r:'+(Join-Path $GameDir 'BepInEx/core/BepInEx.Preloader.Core.dll')),('-r:'+(Join-Path $GameDir 'BepInEx/core/Mono.Cecil.dll')),'Bootstrap.cs','Engine.cs')
+} finally { Pop-Location }
+Write-Output 'Built three modules and startup updater. No game files were changed.'
