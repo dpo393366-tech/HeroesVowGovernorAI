@@ -93,7 +93,8 @@
     "ManualOrders.cs",
     "NearestReturnRoads.cs",
     "BattleDispatchRetry.cs",
-    "DispatchDiagnostics.cs"
+    "DispatchDiagnostics.cs",
+    "AttackProbeCapacity.cs"
   ],
   "StrategicSupportTests": [
     "IntegrationTests.cs",
@@ -164,7 +165,8 @@
     "Campaign112Tests.cs",
     "Camp117Tests.cs",
     "BattleRetry118Tests.cs",
-    "Dispatch119Tests.cs"
+    "Dispatch119Tests.cs",
+    "Attack120Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",
