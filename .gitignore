@@ -1,0 +1,12 @@
+*.dll
+*.pdb
+*.log
+*.zip
+*.runtimeconfig.json
+!IntegrationTests.runtimeconfig.json
+!Suite.runtimeconfig.json
+hook-bindings.txt
+src/TreasuryAwards/tests/Core.cs
+**/settings-test/
+**/negative-control-*/
+installer/payload/
