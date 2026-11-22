@@ -1,4 +1,4 @@
-{
+﻿{
   "StrategicSupport": [
     "StrategicSupport.cs",
     "ArrivalReports.cs",
@@ -181,7 +181,9 @@
     "Construction127Tests.cs",
     "CityPlanning128Tests.cs",
     "Corridor132Tests.cs",
-    "Wall133Tests.cs"
+    "Wall133Tests.cs",
+    "Defense135Tests.cs",
+    "Intercept135Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

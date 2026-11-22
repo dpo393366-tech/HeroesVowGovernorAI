@@ -6,7 +6,7 @@ using UnityEngine.AI;
 
 public sealed partial class StrategicSupport {
  sealed class CampaignGoal {
-  public int Id; public string Faction,Goal,OrderTarget; public bool Returning,Ordered,MovingLogged,Staging,CompletedOrder;
+  public int Id; public string Faction,Goal,OrderTarget,DeclinedDefenseCity; public bool Returning,Ordered,MovingLogged,Staging,CompletedOrder;
   public Vector3 Position; public double OrderedDay,CheckedDay=-1; public int Failures,CheckedPeriod;
   public Vector3 ProgressPosition;public double ProgressDay=-1;public string ProgressTarget;
   public readonly Dictionary<string,double> RetryAfter=new();
@@ -45,7 +45,7 @@ public sealed partial class StrategicSupport {
  static void BeforeCampaignDay(Wo_DeployTeamCtrl __instance){try{if(Ready())RememberCampaign(__instance);}catch(Exception e){Error(e);}}
  static void AfterCampaignCamp(Wo_DeployTeamCtrl __instance){
   try{
-   var t=__instance;if(!Ready())return;RepairCampMotion(t);if(!CampaignControlled(t,out _)||OtherCampaignOrder(t))return;
+   var t=__instance;if(!Ready())return;NotifyDefenseCamp(t);RepairCampMotion(t);if(!CampaignControlled(t,out _)||OtherCampaignOrder(t))return;
    if(Gate("campaign-camp:"+t.m_id,5)){
     var pos=t.GetPosition();double gap=-1;
     if(MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(t.m_targetCity??"",out var city))gap=Vector3.Distance(pos,city.BMBMKPGEHBH);
@@ -203,6 +203,7 @@ public sealed partial class StrategicSupport {
    if(t&&Gate("campaign-skip:"+t.m_id,15))Note($"campaign-recovery-skipped team={t.m_id} idle={CampIdle(t)} controlled={CampaignControlled(t,out _)} sameIdentity={t.m_id==s.Id&&t.m_belongPower==s.Faction} currentGoal={campaignGoals.TryGetValue(t.Pointer,out var current)&&ReferenceEquals(current,s)} manual={ManualProtected(t)} state={t.m_deployState} target={t.m_targetCity} intended={s.Goal} path={t.m_listMovePos?.Count}");
    yield break;
   }
+  if(RetainThreatenedLocalDefense(t,s,f))yield break;
   foreach(var phase in AftermathHomeSteps(t,s,f))yield return phase;
   if(!SameCamp(t,s))yield break;
   if(!s.Returning)foreach(var phase in CampBattleSteps(t,s,f))yield return phase;
@@ -247,6 +248,7 @@ public sealed partial class StrategicSupport {
    if(CampaignAdvance(t,s,next.City,f,"completed-goal-next-frontier",days)){if(!s.Returning)s.Goal=next.City.OJPECMNINNA;yield break;}
    yield return "campaign-next-retry";
   }
+  if(RetainThreatenedLocalDefense(t,s,f))yield break;
   s.Returning=true;
   foreach(var phase in ReturnPartitionSteps(t,s,f))yield return phase;
   if(!SameCamp(t,s))yield break;

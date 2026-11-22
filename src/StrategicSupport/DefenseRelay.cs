@@ -36,7 +36,37 @@ public sealed partial class StrategicSupport {
  }
  static void PollDefense(){
   if(!support.Value||Environment.TickCount64<defensePollAt)return;
-  defensePollAt=Environment.TickCount64+2000;work.Add("defense-pulse",()=>DefensePulse().GetEnumerator());
+  defensePollAt=Environment.TickCount64+2000;
+  // Watch already committed defenders independently of the whole-world census.
+  foreach(var o in defenseOrders.Values.ToArray())ScheduleDefenseWatch(o,"periodic");
+  work.Add("defense-pulse",()=>DefensePulse().GetEnumerator());
+ }
+ static void ScheduleDefenseWatch(DefenseOrder o,string cause){
+  if(o==null)return;long queued=Environment.TickCount64;
+  work.Add("defense-watch:"+o.Id,()=>DefenseWatchSteps(o,cause,queued).GetEnumerator());
+ }
+ static IEnumerable<string> DefenseWatchSteps(DefenseOrder o,string cause,long queued){
+  if(!Ready()||!support.Value||!o.Team||!defenseOrders.TryGetValue(o.Team.Pointer,out var current)||!ReferenceEquals(current,o))yield break;
+  if(!AIGate("relay-watch:"+o.Id,o.Faction,2))yield break;
+  if(Gate("defense-watch-log:"+o.Id,10))Note($"defense-watch team={o.Id} target={o.Target} cause={cause} queueWaitMs={Environment.TickCount64-queued} state={o.Team.m_deployState}");
+  CheckDefenseOrder(o);yield break;
+ }
+ static void NotifyDefenseCamp(Wo_DeployTeamCtrl t){
+  if(t&&defenseOrders.TryGetValue(t.Pointer,out var o)&&SameDefense(o))ScheduleDefenseWatch(o,"camp-event");
+ }
+ static bool RetainThreatenedLocalDefense(Wo_DeployTeamCtrl t,CampaignGoal goal,MKMOJNAJKJE f){
+  if(!support.Value||!SameCamp(t,goal)||!CampaignControlled(t,out var current)||current.Pointer!=f.Pointer)return false;
+  if(t.GetFood()<(long)Math.Max(1,t.GetOneDayFood())*5||t.GetMorale()<30)return false;
+  var city=AOHIBKLOAEI.PNKKPMCJIGA(t.GetPosition());
+  if(city?.LMPMNLLGOEC?.LMMNKIOAGLC!=f.IBGCLCAIBOL||goal.DeclinedDefenseCity==city.OJPECMNINNA||!DefenseThreat(city,f,AttackTeams()))return false;
+  // A full garrison prevents admission, not field defense. Keep an existing
+  // local defender assigned until the threat ends instead of distributing it
+  // to unrelated empty cities. No troops/resources are created or moved here.
+  var order=new DefenseOrder{Team=t,Id=t.m_id,Faction=f.IBGCLCAIBOL,Source=t.m_assembleCity,Target=city.OJPECMNINNA,Position=t.GetPosition(),ProgressPosition=t.GetPosition(),Day=NEINKOOBJIH.MIPFHCKDJOK,ProgressDay=NEINKOOBJIH.MIPFHCKDJOK};
+  defenseOrders[t.Pointer]=order;campaignGoals.Remove(t.Pointer);
+  t.ClearTarget(false);t.m_tmpTargetCity="";t.m_isEnterCity=false;
+  Note($"campaign-defense-retained team={t.m_id} city={city.OJPECMNINNA} soldiers={t.GetSoldierNum(false)} reason=local-threat-before-return capacityAdmissionRequired=false");
+  ScheduleDefenseWatch(order,"local-defense-handoff");return true;
  }
  static IEnumerable<string> DefensePulse(){
   double day=Math.Floor((double)NEINKOOBJIH.MIPFHCKDJOK);bool daily=day!=defenseDay;defenseDay=day;
@@ -72,7 +102,7 @@ public sealed partial class StrategicSupport {
   foreach(var hunt in huntOrders.Values.ToArray()){yield return "hunt-progress";try{CheckHunt(hunt);}catch(Exception e){Error(e);}}
   foreach(var cover in coverOrders.Values.ToArray()){yield return "regional-cover-progress";try{if(AIGate("cover-watch:"+cover.Id,cover.Faction,2))CheckRegionalCover(cover);}catch(Exception e){Error(e);}}
   foreach(var phase in RegionalLoanSteps())yield return phase;
-  foreach(var o in defenseOrders.Values.ToArray()){yield return "relay-progress";try{if(AIGate("relay-watch:"+o.Id,o.Faction,2))CheckDefenseOrder(o);}catch(Exception e){Error(e);}}
+  foreach(var o in defenseOrders.Values.ToArray()){yield return "relay-progress";ScheduleDefenseWatch(o,"census-fallback");}
  }
  static bool SameDefense(DefenseOrder o)=>o.Team&&!ManualProtected(o.Team)&&o.Team.m_id==o.Id&&o.Team.m_belongPower==o.Faction&&!o.Team.m_isPrivate&&!o.Team.m_responseToPlayer&&!o.Team.IncludePlayer();
  static bool DefenseBattleMatches(NJHDEHLHENN war,AFAGFHJONFJ target,MKMOJNAJKJE f)=>target!=null&&f!=null&&war!=null&&war.EMMJBPMNFAK!=null&&war.EMMJBPMNFAK.Contains(f.IBGCLCAIBOL)&&BattleTransitRegion(war,f)==target.OJPECMNINNA;
@@ -95,7 +125,10 @@ public sealed partial class StrategicSupport {
   // cannot enqueue an obsolete offensive order re-entrantly.
   t.StartCamp();t.m_targetCity="";t.m_targetWarInfo=null;
   defenseOrders.Remove(t.Pointer);
-  var goal=new CampaignGoal{Id=t.m_id,Faction=o.Faction,Goal=o.Target,Returning=true};campaignGoals[t.Pointer]=goal;
+  // A real retreat due to failed routing/supply must not be recaptured by the
+  // local-defense handoff in the very next recovery step. This applies only to
+  // this return intent, not future armies, recruitment or threat detection.
+  var goal=new CampaignGoal{Id=t.m_id,Faction=o.Faction,Goal=o.Target,Returning=true,DeclinedDefenseCity=reason=="threat-ended"?null:o.Target};campaignGoals[t.Pointer]=goal;
   work.Add("campaign:"+t.m_id,()=>RecoverCampaign(t,goal).GetEnumerator());
  }
  static void CheckDefenseOrder(DefenseOrder o){

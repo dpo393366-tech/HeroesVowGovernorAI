@@ -84,9 +84,11 @@ public sealed partial class StrategicSupport {
   var roads=new NearestReturnRoads(t.GetPosition(),f);
   bool Eligible(AFAGFHJONFJ c)=>c.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL&&ReturnGroupFits(t,CapacityRoom(c,AttackTeams(),t))&&!c.GKLIEHCHDLD()&&!IncomingHostile(c,f);
   while(SameCamp(t,goal)){
+   if(RetainThreatenedLocalDefense(t,goal,f))yield break;
    foreach(var phase in roads.Next(()=>SameCamp(t,goal),Eligible))yield return "return-partition-"+phase;
    if(roads.City==null)yield break;
    yield return "return-partition-order";if(!SameCamp(t,goal))yield break;
+   if(RetainThreatenedLocalDefense(t,goal,f))yield break;
    var city=roads.City;var teams=AttackTeams();int room=CapacityRoom(city,teams,t),count=TeamTroops(t).Count;
    if(room<=0||!CampaignRoute(t,city,f,out int days)||!ReturnSafe(t,city,f,teams,days,false))continue;
    if(count<=room){if(DestinationFoodSafe(city,teams,t)&&CampaignMove(t,goal,city,true,"distributed-return-remainder",days)){Note($"return-search team={t.m_id} routesChecked={roads.RoutesChecked} deferredFarCities={roads.Pruned} basis=validated-native-road");yield break;}continue;}

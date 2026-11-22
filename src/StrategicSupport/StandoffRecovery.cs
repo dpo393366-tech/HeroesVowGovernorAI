@@ -4,14 +4,24 @@ public sealed partial class StrategicSupport {
  static readonly Dictionary<IntPtr,Standoff> standoffs=new();
  sealed class FailedIntercept {public int Enemy;public string Faction;public Vector3 Position;public double Day;public int Power;}
  static readonly Dictionary<string,FailedIntercept> failedIntercepts=new();
- // Native automatic response must have a local military purpose. A returning
- // enemy army on the other side of the map is not an invasion of this city.
+ // Native interception may protect an ally or cut reinforcements to an allied
+ // battle. Only checking the opponent's current region cancels those orders.
+ static bool InterceptProtectedFaction(string own,string other){
+  if(string.IsNullOrEmpty(other))return false;
+  return own==other||(NEINKOOBJIH.COCMABJFOFH.TryGetValue(own??"",out var f)&&f!=null&&f.AENJACOFBJK!=null&&f.AENJACOFBJK.TryGetValue(other,out var relation)&&relation?.EBIOPDHEBOF==BHBNKONCOJD.Ally);
+ }
+ static bool InterceptBattlePurpose(string own,Wo_DeployTeamCtrl enemy,NJHDEHLHENN battle){
+  if(!CorridorWarAlive(battle))return false;
+  int side=battle.EMMJBPMNFAK[0]==enemy.m_belongPower?0:battle.EMMJBPMNFAK[1]==enemy.m_belongPower?1:-1;
+  return side>=0&&InterceptProtectedFaction(own,battle.EMMJBPMNFAK[1-side]);
+ }
  static bool InterceptRelevant(Wo_DeployTeamCtrl t,Wo_DeployTeamCtrl enemy,out string reason){
   reason=null;
   if(!MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(t.m_assembleCity??"",out var home)||home.LMPMNLLGOEC?.LMMNKIOAGLC!=t.m_belongPower)return true;
   bool Own(AFAGFHJONFJ c)=>c?.LMPMNLLGOEC?.LMMNKIOAGLC==t.m_belongPower;
-  if(MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(enemy.m_targetCity??"",out var attacked)&&Own(attacked))return true;
-  if(enemy.m_attackTarget&&enemy.m_attackTarget.m_belongPower==t.m_belongPower)return true;
+  if(MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(enemy.m_targetCity??"",out var attacked)&&!enemy.m_isEnterCity&&InterceptProtectedFaction(t.m_belongPower,attacked?.LMPMNLLGOEC?.LMMNKIOAGLC))return true;
+  if(enemy.m_attackTarget&&InterceptProtectedFaction(t.m_belongPower,enemy.m_attackTarget.m_belongPower))return true;
+  if(InterceptBattlePurpose(t.m_belongPower,enemy,enemy.m_targetWarInfo)||InterceptBattlePurpose(t.m_belongPower,enemy,enemy.m_warInfo))return true;
   var region=AOHIBKLOAEI.PNKKPMCJIGA(enemy.GetPosition());
   // Unknown geometry is not enough evidence to cancel a native order.
   if(region==null||Own(region)||region.Pointer==home.Pointer)return true;
@@ -104,7 +114,7 @@ public sealed partial class StrategicSupport {
     t.SetAttackTarget(target,true);
     if(t.m_deployState==AKOPKFPKJPP.Expedition&&t.m_listMovePos!=null){
      t.GAANFLKOMKL?.Clear();t.m_listMovePos.Clear();foreach(var point in route)t.m_listMovePos.Add(point);
-     s.TargetPosition=target.GetPosition();s.Attempts++;Note($"standoff-resumed team={t.m_id} opponent={target.m_id} opponentState={target.m_deployState} routePoints={route.Count} length={length:F1} nativeAttack=true");return;
+     s.TargetPosition=target.GetPosition();s.Attempts++;Note($"standoff-resumed team={t.m_id} opponent={target.m_id} opponentState={target.m_deployState} routePoints={route.Count} length={length:F1} nativeAttack=true opponentTargetWar={target.m_targetWarInfo?.HIENOINGBCN} alliedBattlePurpose={InterceptBattlePurpose(t.m_belongPower,target,target.m_targetWarInfo)}");return;
     }
    }
   }
