@@ -100,7 +100,9 @@
     "AttackProbeCapacity.cs",
     "FamilyOfficerProtection.cs",
     "BattleCorridors.cs",
-    "WallConstruction.cs"
+    "WallConstruction.cs",
+    "OffenseMarchSafety.cs",
+    "AttackRoadPreparation.cs"
   ],
   "StrategicSupportTests": [
     "IntegrationTests.cs",
@@ -186,7 +188,8 @@
     "Defense135Tests.cs",
     "Intercept135Tests.cs",
     "Return137Tests.cs",
-    "Intercept138Tests.cs"
+    "Intercept138Tests.cs",
+    "Offense141Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

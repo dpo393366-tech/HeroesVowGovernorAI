@@ -90,7 +90,7 @@ public sealed partial class StrategicSupport {
  static void AfterCampaignDay(Wo_DeployTeamCtrl __instance){
   try{
    if(!Ready())return;ObserveManualTeam(__instance);if(ManualProtected(__instance))return;AdoptCompletedCityOrder(__instance);if(!CampaignControlled(__instance,out _))return;
-   var t=__instance;RememberCampaign(t);WatchCampaignMarch(t);ScheduleReturnWatch(t);
+   var t=__instance;RememberCampaign(t);ScheduleAttackMarch(t);WatchCampaignMarch(t);ScheduleReturnWatch(t);
    if(!campaignGoals.TryGetValue(t.Pointer,out var s))return;
    if(s.Ordered&&(s.OrderTarget==t.m_targetCity||(s.Staging&&string.IsNullOrEmpty(t.m_targetCity)))){
     float moved=Vector3.Distance(s.Position,t.GetPosition());
@@ -135,7 +135,8 @@ public sealed partial class StrategicSupport {
   if(target.GKLIEHCHDLD())return "target-already-in-battle";
   if(t.GetMorale()<40)return "low-morale";
   if(t.GetWoundNum()>t.GetSoldierNum(false)/2)return "heavy-wounds";
-  if(t.GetCombatVal()<AttackDefense(target,teams))return "insufficient-power";
+  var resistance=AttackStrength(target,teams);if(t.GetCombatVal()<resistance.Required)return "insufficient-power";
+  if(t.GetSoldierNum(false)<Math.Ceiling(resistance.Soldiers*.75))return "insufficient-manpower";
   if(t.GetFood()<(long)Math.Max(1,t.GetOneDayFood())*(days*2+15))return "insufficient-roundtrip-food";
   return null;
  }

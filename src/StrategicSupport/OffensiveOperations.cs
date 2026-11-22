@@ -101,14 +101,30 @@ public sealed partial class StrategicSupport
   foreach(var t in teams)if(t.m_belongPower==f.IBGCLCAIBOL&&(t.m_targetCity==target.OJPECMNINNA||t.m_warInfo?.IJGLCFJOOIK?.Pointer==target.Pointer))return false;
   return true;
  }
- static int AttackDefense(AFAGFHJONFJ target,List<Wo_DeployTeamCtrl> teams){
-  long defense=Power(target);var seen=new HashSet<string>{target.OJPECMNINNA};
+ static int AttackDefense(AFAGFHJONFJ target,List<Wo_DeployTeamCtrl> teams)=>AttackStrength(target,teams).Required;
+ static (int Required,long Soldiers) AttackStrength(AFAGFHJONFJ target,List<Wo_DeployTeamCtrl> teams){
+  var reserved=AttackReserved(teams);
+  (long Power,long Men) Home(AFAGFHJONFJ c){long n=0,raw=0;var used=new HashSet<IntPtr>();if(c.LMPMNLLGOEC?.KJPPGIOCDID!=null)foreach(var a in c.LMPMNLLGOEC.KJPPGIOCDID)if(a!=null&&!reserved.Contains(a.Pointer)&&used.Add(a.Pointer)){n+=Math.Max(0,a.FGHFOLKBHDL);raw+=Math.Max(0,a.GNCKPEPJDGF());}return (Math.Max(Power(c),raw),n);}
+  var garrison=Home(target);long soldiers=garrison.Men,defense=garrison.Power;var seen=new HashSet<string>{target.OJPECMNINNA};
   string owner=target.LMPMNLLGOEC.LMMNKIOAGLC;
   if(!string.IsNullOrEmpty(owner)){
-   if(target.FKMKGNPFLFP!=null)foreach(var n in target.FKMKGNPFLFP)if(n?.LMPMNLLGOEC?.LMMNKIOAGLC==owner&&seen.Add(n.OJPECMNINNA))defense+=Power(n)/3;
-   foreach(var t in teams)if(t.m_belongPower==owner&&t.m_targetCity==target.OJPECMNINNA)defense+=Math.Max(0,t.GetCombatVal());
+   if(target.FKMKGNPFLFP!=null)foreach(var n in target.FKMKGNPFLFP)if(n?.LMPMNLLGOEC?.LMMNKIOAGLC==owner&&seen.Add(n.OJPECMNINNA)){var near=Home(n);defense+=near.Power/3;soldiers+=near.Men/3;}
+   var fieldSeen=new HashSet<IntPtr>();
+   foreach(var t in teams){
+    if(!t||!fieldSeen.Add(t.Pointer)||(t.m_belongPower!=owner&&!InterceptProtectedFaction(owner,t.m_belongPower))||t.m_deployState==AKOPKFPKJPP.Assemble||t.GetSoldierNum(false)<=0)continue;
+    // Native city power falls to zero after defenders leave the city. Their
+    // camp/response orders normally have no targetCity, but remain defenders.
+    var region=AOHIBKLOAEI.PNKKPMCJIGA(t.GetPosition());
+    bool local=region?.OJPECMNINNA==target.OJPECMNINNA;
+    bool incoming=t.m_targetCity==target.OJPECMNINNA||t.m_targetWarInfo?.IJGLCFJOOIK?.OJPECMNINNA==target.OJPECMNINNA||t.m_warInfo?.IJGLCFJOOIK?.OJPECMNINNA==target.OJPECMNINNA;
+    long power=Math.Max(0,t.GetCombatVal());
+    if(local||incoming){defense+=power;soldiers+=t.GetSoldierNum(false);}
+    else if(t.m_belongPower==owner&&region!=null&&seen.Contains(region.OJPECMNINNA)){defense+=power/3;soldiers+=t.GetSoldierNum(false)/3;}
+   }
   }
-  return OffensivePolicy.RequiredPower(defense,Math.Round(attackAdvantage.Value,3)+NativeWarFrequencyMargin());
+  int required=OffensivePolicy.RequiredPower(defense,Math.Round(attackAdvantage.Value,3)+NativeWarFrequencyMargin());
+  if(Gate("offense-defense:"+target.OJPECMNINNA,15))Note($"offense-defense target={target.OJPECMNINNA} owner={owner} defendersAdjusted={defense} defendersSoldiers={soldiers} requiredAdjusted={required} includesFieldDefenders=true");
+  return (required,soldiers);
  }
  // UI WarFrequency -> static +0x34. Native governor offense adds .8 in
  // mode 0 vs .4 otherwise to its variable strength margin. Preserve that
@@ -183,7 +199,7 @@ public sealed partial class StrategicSupport
   Wo_DeployTeamCtrl team=null;
   try{
    int required=AttackDefense(target,teams);
-   offenseGenerating=true;try{team=GenerateSupport(c,required,teams,reserved);}finally{offenseGenerating=false;}if(!team){FailedProbe(c,"city:"+target.Pointer,required);AttackSkip(c,f,AttackTeams(),"native-assembly-or-garrison-reserve",target);return false;}
+   offenseGenerating=true;try{team=GenerateSupport(c,AttackStrength(target,teams).Soldiers>0?int.MaxValue:required,teams,reserved);}finally{offenseGenerating=false;}if(!team){FailedProbe(c,"city:"+target.Pointer,required);AttackSkip(c,f,AttackTeams(),"native-assembly-or-garrison-reserve",target);return false;}
    // The same native generator and assembly/food lifecycle used by support.
    // Only the destination is hostile; no forced StartDeploy or teleport.
    team.m_targetCity=target.OJPECMNINNA;team.m_isEnterCity=false;
@@ -206,7 +222,8 @@ public sealed partial class StrategicSupport
   if(!AttackRoute(c,target,f,out double attackLength))return "route-blocked";
   var teams=AttackTeams();var others=teams.Where(x=>x.Pointer!=t.Pointer).ToList();
   if(!EnemyTarget(c,target,f,o.Governor,others))return "duplicate-or-invalid-target";
-  int required=AttackDefense(target,others);if(t.GetCombatVal()<required)return "insufficient-attack-power";
+  var resistance=AttackStrength(target,others);int required=resistance.Required;if(t.GetCombatVal()<required)return "insufficient-attack-power";
+  if(t.GetSoldierNum(false)<Math.Ceiling(resistance.Soldiers*.75))return "insufficient-attack-manpower";
   var sent=new HashSet<IntPtr>();long sentPower=0,sentSoldiers=0;
   if(t.m_dicDeployArmy!=null)foreach(var group in t.m_dicDeployArmy)if(group.Value!=null)foreach(var a in group.Value){if(a==null||!sent.Add(a.Pointer))return "invalid-army";sentPower+=Math.Max(0,a.GNCKPEPJDGF());sentSoldiers+=Math.Max(0,a.FGHFOLKBHDL);}
   var reserved=AttackReserved(others);long homePower=0,homeSoldiers=0;int homeUnits=0;var present=new HashSet<IntPtr>();

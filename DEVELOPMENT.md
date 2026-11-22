@@ -1,3 +1,13 @@
+## r141: 공격 전력 누락·토벌 집결·행군 중 지원 준비
+
+Observed in the reported session: Shuofang attack 22225 was approved with requiredAdjusted=1350 and 10000 soldiers while field defenders were present. Wuwei army22629 had30000 soldiers against188464 at battle start. Its cold support pass calculated43 routes in7453ms before ranking; nearest ETA40.8 exceeded observed hold28.9. Chengdu army22740 had10000 against205890; initial routing did not produce a dispatch before that battle ended.
+
+Changes: deduplicated local/incoming field defenders plus unreserved garrison, separate manpower floor(.75 at new autonomous attack; .5 at march reconsideration, alongside parity), safe full-pool native allocation, capability-change retry suppression for manpower failures, scheduled march reassessment and same-endpoint prewar route preparation. Native path validation/corridor handling remains mandatory. Manual/private/active-combat/support orders are preserved. No claim that numerical thresholds guarantee a battle result.
+
+Hunt: actual insufficient assembled force now remains a deficit even if uncommanded roster power looks sufficient. Safe full-pool generation avoids stopping at the misleading native request threshold. Incoming cargo reservations and real arrival rechecks retained; blocked muster stages now log a reason.
+
+Verification: existing full regression suite,100 focused production-code mock checks,4 negative controls (removed field census/manpower check/muster deficit/prewar cache must fail), actual native reference build and Harmony stand-ins. Not live gameplay/FPS verification. Actual march ETA uses existing complete path corners without new path searches; prewar route generation yields through existing scheduler budget.
+
 # 구성·빌드·검증 정보
 
 일반 사용자는 [설치 설명](INSTALL.ko.md)과 [기능 설명](GUIDE.ko.md)을 먼저 읽으세요.

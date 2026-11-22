@@ -22,9 +22,11 @@ public sealed partial class StrategicSupport {
    work.Add("battle-route:"+key,()=>BattleRouteQuote(c,w,f,key).GetEnumerator());
   return true;
  }
- static void SaveBattleRoad(AFAGFHJONFJ c,NJHDEHLHENN w,MKMOJNAJKJE f,RoutePlan route,string stamp){
+ static void TrimBattleRoads(){
   if(savedBattleRoads.Count>=8192){string oldest=null;long at=long.MaxValue;foreach(var p in savedBattleRoads)if(p.Value.Checked<at){at=p.Value.Checked;oldest=p.Key;}if(oldest!=null)savedBattleRoads.Remove(oldest);}
-  savedBattleRoads[BattleRoadKey(c,w,f)]=new(){World=MICGPAMNDKM.IJPKEMPIFIH?.Pointer,Stamp=stamp,Length=route.Length,Success=route.Success,Checked=Environment.TickCount64,Points=new(route.Points),Legs=new(route.Legs),Blocker=route.CorridorBlocker,Detour=route.CorridorDetour,Corridors=corridorRevision};
+ }
+ static void SaveBattleRoad(AFAGFHJONFJ c,NJHDEHLHENN w,MKMOJNAJKJE f,RoutePlan route,string stamp){
+  TrimBattleRoads();savedBattleRoads[BattleRoadKey(c,w,f)]=new(){World=MICGPAMNDKM.IJPKEMPIFIH?.Pointer,Stamp=stamp,Length=route.Length,Success=route.Success,Checked=Environment.TickCount64,Points=new(route.Points),Legs=new(route.Legs),Blocker=route.CorridorBlocker,Detour=route.CorridorDetour,Corridors=corridorRevision};
  }
  static void InvalidateBattleRoad(AFAGFHJONFJ c,NJHDEHLHENN w,MKMOJNAJKJE f)=>savedBattleRoads.Remove(BattleRoadKey(c,w,f));
 }

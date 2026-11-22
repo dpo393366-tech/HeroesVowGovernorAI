@@ -50,7 +50,10 @@ public sealed partial class StrategicSupport {
     if(!CombatProbeReady(c,HuntProbeKey(enemy),HuntPower(enemy),teams))continue;
     Wo_DeployTeamCtrl team=null;
     try{
-     offenseGenerating=true;try{team=GenerateSupport(c,HuntPower(enemy),teams,AttackReserved(teams));}finally{offenseGenerating=false;}
+     // Native requested power can stop commander allocation before the final
+     // adjusted army reaches HuntPower. Request the safe available pool;
+     // GenerateSupport still enforces home troops/officers/food reserves.
+     offenseGenerating=true;try{team=GenerateSupport(c,int.MaxValue,teams,AttackReserved(teams));}finally{offenseGenerating=false;}
      if(!team){FailedProbe(c,HuntProbeKey(enemy),HuntPower(enemy));Note($"hunt-block city={c.OJPECMNINNA} target={enemy.m_id} reason=native-assembly-empty-or-home-reserve");continue;}
      team.m_targetFoodDay=Math.Max(foodDays.Value,days*2+15);
      int actual=team.GetCombatVal(),required=HuntPower(enemy);
