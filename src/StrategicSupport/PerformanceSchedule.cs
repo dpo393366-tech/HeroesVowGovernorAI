@@ -37,7 +37,7 @@ public sealed partial class StrategicSupport
   }
   constructionVisits[c.OJPECMNINNA]=new(){City=c.Pointer,Owner=f.IBGCLCAIBOL,Governor=governor,Day=day,Remaining=buildsPerCity.Value};
  }
- static void ResetWork(){work.Clear();constructionVisits.Clear();coverPlanning.Clear();decisionStamps.Clear();foreach(var key in aiGatePeriods.Keys)next.Remove(key);aiGatePeriods.Clear();cityAdmissions.Clear();}
+ static void ResetWork(){work.Clear();ResetFixedRoads();constructionVisits.Clear();coverPlanning.Clear();decisionStamps.Clear();foreach(var key in aiGatePeriods.Keys)next.Remove(key);aiGatePeriods.Clear();cityAdmissions.Clear();}
  static bool CurrentCity(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor)=>c!=null&&f!=null&&c.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL
   &&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(c.OJPECMNINNA,out var registered)&&registered?.Pointer==c.Pointer
   &&c.LMPMNLLGOEC.IPJHOOJBCKI==governor&&Eligible(c,out var current)&&current.Pointer==f.Pointer&&!c.GKLIEHCHDLD();

@@ -16,10 +16,8 @@ public sealed partial class StrategicSupport {
   float speed=Wo_DeployTeamCtrl.GetMoveSpeed(f.IBGCLCAIBOL,false);
   if(cached.Success&&speed>0)eta=cached.Length/speed+mobilizeSeconds.Value;
   battleRoutes[key]=(eta,long.MaxValue,stamp);
-  // Refresh geometry in the background, never hold an emergency decision
-  // behind a periodic refresh. Final dispatch still validates native paths.
-  if(schedulerOnline&&cached.Success&&Environment.TickCount64-cached.Checked>=60000)
-   work.Add("battle-route:"+key,()=>BattleRouteQuote(c,w,f,key).GetEnumerator());
+  // Fixed geometry does not expire by wall clock. Ownership, diplomacy,
+  // topology and battle corridors still validate independently above.
   return true;
  }
  static void TrimBattleRoads(){
@@ -28,5 +26,9 @@ public sealed partial class StrategicSupport {
  static void SaveBattleRoad(AFAGFHJONFJ c,NJHDEHLHENN w,MKMOJNAJKJE f,RoutePlan route,string stamp){
   TrimBattleRoads();savedBattleRoads[BattleRoadKey(c,w,f)]=new(){World=MICGPAMNDKM.IJPKEMPIFIH?.Pointer,Stamp=stamp,Length=route.Length,Success=route.Success,Checked=Environment.TickCount64,Points=new(route.Points),Legs=new(route.Legs),Blocker=route.CorridorBlocker,Detour=route.CorridorDetour,Corridors=corridorRevision};
  }
- static void InvalidateBattleRoad(AFAGFHJONFJ c,NJHDEHLHENN w,MKMOJNAJKJE f)=>savedBattleRoads.Remove(BattleRoadKey(c,w,f));
+ static void InvalidateBattleRoad(AFAGFHJONFJ c,NJHDEHLHENN w,MKMOJNAJKJE f){
+  string key=BattleRoadKey(c,w,f);var at=c.BMBMKPGEHBH;
+  if(savedBattleRoads.TryGetValue(key,out var old)&&old.Legs!=null)foreach(var end in old.Legs){ForgetFixedRoad(at,end);at=end;}
+  ForgetFixedRoad(c.BMBMKPGEHBH,w.GBHGENNMJCK);savedBattleRoads.Remove(key);
+ }
 }

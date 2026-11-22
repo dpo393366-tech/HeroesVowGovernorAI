@@ -23,19 +23,20 @@ public sealed partial class StrategicSupport {
  // Planning callers consume one native territory sample per scheduler slice.
  // Final native command validation drains the exact same checks synchronously.
  static bool ReliefPath(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,out List<Vector3> points,out double length){
-  var result=new RoutePlan();foreach(var phase in ReliefPathSteps(from,to,f,allowed,escape,result)){}
+  var result=new RoutePlan();foreach(var phase in ReliefPathAvoidSteps(from,to,f,allowed,escape,result,null,false)){}
   points=result.Points;length=result.Length;reliefRouteFailure=result.Failure;return result.Success;
  }
  static IEnumerable<string> ReliefPathSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result){
   foreach(var phase in ReliefPathAvoidSteps(from,to,f,allowed,escape,result,null))yield return phase;
  }
- static IEnumerable<string> ReliefPathAvoidSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result,Func<List<Vector3>,bool> passage){
+ static IEnumerable<string> ReliefPathAvoidSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result,Func<List<Vector3>,bool> passage,bool reuseGeometry=true){
   result.Success=false;result.Failure="native-route-or-territory";
   var generation=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;string key=RoadCacheKey(from,to,f,allowed,escape),stamp=RoadPolicyStamp(f);
-  if(passage==null&&roadChoices.TryGetValue(key,out var cached)&&cached.World==generation&&cached.Stamp==stamp&&cached.Until>Environment.TickCount64){
+  yield return "route-policy";if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;
+  if(passage==null&&roadChoices.TryGetValue(key,out var cached)&&cached.World==generation&&cached.Stamp==stamp){
    var at=from;var replay=new RoutePlan{Success=true};
    foreach(var end in cached.Legs){
-    var leg=new RoutePlan();foreach(var phase in ReliefPathCoreSteps(at,end,f,allowed,escape&&at.Equals(from),null,leg)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;}
+    var leg=new RoutePlan();foreach(var phase in ReliefPathCoreSteps(at,end,f,allowed,escape&&at.Equals(from),null,leg,reuseGeometry)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;}
     if(!leg.Success){replay.Success=false;break;}AppendRoad(replay,leg);replay.Legs.Add(end);at=end;
    }
    if(replay.Success&&Math.Abs(replay.Length-cached.Length)<.01){
@@ -47,7 +48,7 @@ public sealed partial class StrategicSupport {
    }
    roadChoices.Remove(key);
   }
-  var direct=new RoutePlan();foreach(var phase in ReliefPathCoreSteps(from,to,f,allowed,escape,null,direct)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;}
+  var direct=new RoutePlan();foreach(var phase in ReliefPathCoreSteps(from,to,f,allowed,escape,null,direct,reuseGeometry)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;}
   if(direct.Success&&passage!=null&&!passage(direct.Points))direct.Success=false;
   if(direct.Success){direct.Legs.Add(to);CopyRoad(result,direct);}
   var origin=AOHIBKLOAEI.PNKKPMCJIGA(from);var destination=AOHIBKLOAEI.PNKKPMCJIGA(to);
@@ -65,7 +66,7 @@ public sealed partial class StrategicSupport {
      if(neighbor==null||settled.Contains(neighbor.Pointer)||(!Friendly(neighbor)&&neighbor.Pointer!=destination.Pointer))continue;
      var leg=new RoutePlan();var end=neighbor.Pointer==destination.Pointer?to:neighbor.BMBMKPGEHBH;
      var begin=last.Pointer==origin.Pointer?from:last.BMBMKPGEHBH;
-     foreach(var phase in ReliefPathCoreSteps(begin,end,f,allowed,escape&&last.Pointer==origin.Pointer,null,leg)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation){result.Success=false;yield break;}}
+     foreach(var phase in ReliefPathCoreSteps(begin,end,f,allowed,escape&&last.Pointer==origin.Pointer,null,leg,reuseGeometry)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation){result.Success=false;yield break;}}
      if(!leg.Success||passage!=null&&!passage(leg.Points))continue;double distance=current.Length+leg.Length;
      if(result.Success&&distance>=result.Length-.001||plans.TryGetValue(neighbor.Pointer,out var old)&&old.Length<=distance)continue;
      var candidate=new RoutePlan{Success=true,Length=current.Length,Points=new(current.Points),Legs=new(current.Legs)};AppendRoad(candidate,leg);candidate.Legs.Add(end);
@@ -74,9 +75,9 @@ public sealed partial class StrategicSupport {
    }
   }
   if(RoadPolicyStamp(f)!=stamp){result.Success=false;yield break;}
-  if(result.Success){if(direct.Success&&result.Length+.01<direct.Length&&Gate("road-improved:"+key,15))Note($"road-shortest-improved faction={f.IBGCLCAIBOL} from={origin?.OJPECMNINNA} to={destination?.OJPECMNINNA} presetLength={direct.Length:F2} shortestLength={result.Length:F2} legs={result.Legs.Count} basis=native-road-graph");result.Failure="validated-shortest-native-road-graph";if(passage==null){if(roadChoices.Count>=2048)roadChoices.Clear();roadChoices[key]=new RoadChoice{World=generation,Stamp=stamp,Until=Environment.TickCount64+3000,Length=result.Length,Legs=new(result.Legs)};}}
+  if(result.Success){if(direct.Success&&result.Length+.01<direct.Length&&Gate("road-improved:"+key,15))Note($"road-shortest-improved faction={f.IBGCLCAIBOL} from={origin?.OJPECMNINNA} to={destination?.OJPECMNINNA} presetLength={direct.Length:F2} shortestLength={result.Length:F2} legs={result.Legs.Count} basis=native-road-graph");result.Failure="validated-shortest-native-road-graph";if(passage==null){if(roadChoices.Count>=8192&&!roadChoices.ContainsKey(key))roadChoices.Remove(roadChoices.Keys.First());roadChoices[key]=new RoadChoice{World=generation,Stamp=stamp,Until=long.MaxValue,Length=result.Length,Legs=new(result.Legs)};}}
  }
- static IEnumerable<string> ReliefPathCoreSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,List<Vector3> forcedLegs,RoutePlan result){
+ static IEnumerable<string> ReliefPathCoreSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,List<Vector3> forcedLegs,RoutePlan result,bool reuseGeometry=false){
   result.Success=false;var points=new List<Vector3>();double length=0;var generation=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;var origin=AOHIBKLOAEI.PNKKPMCJIGA(from);var dest=AOHIBKLOAEI.PNKKPMCJIGA(to);
   var legs=new List<Vector3>();var seen=new HashSet<IntPtr>();
   bool Permitted(AFAGFHJONFJ c){var owner=c?.LMPMNLLGOEC?.LMMNKIOAGLC;return string.IsNullOrEmpty(owner)||owner==f.IBGCLCAIBOL||c.OJPECMNINNA==allowed||(f.AENJACOFBJK.TryGetValue(owner,out var r)&&r!=null&&(r.EBIOPDHEBOF==BHBNKONCOJD.Ally||r.EBIOPDHEBOF==BHBNKONCOJD.ArmyPass));}
@@ -88,15 +89,14 @@ public sealed partial class StrategicSupport {
   }
   if(forcedLegs!=null)legs.AddRange(forcedLegs);else legs.Add(to);var at=from;
   foreach(var leg in legs){
-   yield return "route-native-path";if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;
-   if(!NavMesh.SamplePosition(at,out var a,5,NavMesh.AllAreas)||!NavMesh.SamplePosition(leg,out var b,5,NavMesh.AllAreas))yield break;
-   var path=new NavMeshPath();if(!NavMesh.CalculatePath(a.position,b.position,NavMesh.AllAreas,path)||path.status!=NavMeshPathStatus.PathComplete)yield break;
-   var corners=path.corners;if(corners==null||corners.Length==0||Vector3.Distance(corners[corners.Length-1],b.position)>1)yield break;
-   // Topology is authoritative: a third city merely being nearer to a
-   // NavMesh corner is not passage through that city's roads or territory.
-   for(int i=1;i<corners.Length;i++)length+=Vector3.Distance(corners[i-1],corners[i]);
-   foreach(var p in corners)if(points.Count==0||Vector3.Distance(points[points.Count-1],p)>.01f){points.Add(p);if(points.Count>1024)yield break;}
-   at=b.position;
+   FixedRoadLeg geometry=null;
+   if(!reuseGeometry||!SavedFixedRoad(at,leg,out geometry)){
+    yield return "route-native-path";if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;
+    if(!CalculateFixedRoad(at,leg,out geometry))yield break;
+   }
+   length+=geometry.Length;
+   foreach(var p in geometry.Points)if(points.Count==0||Vector3.Distance(points[points.Count-1],p)>.01f){points.Add(p);if(points.Count>1024)yield break;}
+   at=geometry.End;
   }
   result.Points=points;result.Length=length;result.Success=points.Count>0&&double.IsFinite(length);
  }

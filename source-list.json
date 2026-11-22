@@ -88,6 +88,7 @@
     "BattleSourcePlanning.cs",
     "CompletedCampaign.cs",
     "RoadChoiceCache.cs",
+    "FixedRoadGeometry.cs",
     "FrontAllocationPolicy.cs",
     "MobileRelief.cs",
     "BuildingEffectsPolicy.cs",
@@ -190,7 +191,8 @@
     "Return137Tests.cs",
     "Intercept138Tests.cs",
     "Offense141Tests.cs",
-    "Cold142Tests.cs"
+    "Cold142Tests.cs",
+    "Roads143Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

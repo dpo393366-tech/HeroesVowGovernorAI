@@ -197,7 +197,7 @@ public sealed partial class StrategicSupport
         }finally{battleBusy=false;}
     }
     static IEnumerable<string> ObservedBattlePlan(NJHDEHLHENN w,BattleState state,int side,bool direct,MKMOJNAJKJE faction,long queuedAt){
-        long started=Environment.TickCount64;int steps=0;
+        long started=Environment.TickCount64;double simulationStart=state.LastClock;int steps=0;
         Note($"battle-plan-start war={state.Name} faction={faction.IBGCLCAIBOL} queueWaitMs={started-queuedAt}");
         using(var scan=SafePhases(BattleSourceSteps(w,state,side,direct,faction)).GetEnumerator()){
          bool more=true;while(more){long slice=System.Diagnostics.Stopwatch.GetTimestamp();int quantum=0;string phase="end";
@@ -206,7 +206,7 @@ public sealed partial class StrategicSupport
           if(more)yield return phase;
          }
         }
-        Note($"battle-plan-end war={state.Name} faction={faction.IBGCLCAIBOL} elapsedMs={Environment.TickCount64-started} steps={steps}");
+        Note($"battle-plan-end war={state.Name} faction={faction.IBGCLCAIBOL} elapsedMs={Environment.TickCount64-started} steps={steps} simulationElapsed={Math.Max(0,state.LastClock-simulationStart):F2}");
     }
     static void Reserve(Wo_DeployTeamCtrl t,HashSet<IntPtr> reserved)
     {if(t.m_dicDeployArmy!=null)foreach(var group in t.m_dicDeployArmy)if(group.Value!=null)foreach(var a in group.Value)if(a!=null)reserved.Add(a.Pointer);}

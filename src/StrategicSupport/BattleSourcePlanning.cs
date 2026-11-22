@@ -1,22 +1,29 @@
 ﻿using System;using System.Collections.Generic;using System.Linq;using UnityEngine;
 public sealed partial class StrategicSupport {
+ // Topological rings only schedule cold work. Actual road ETA still ranks
+ // each ring, and all permission/physical/corridor checks remain authoritative.
+ static List<List<AFAGFHJONFJ>> BattleRoadTiers(List<AFAGFHJONFJ> sources,AFAGFHJONFJ anchor){
+  if(anchor==null)return new(){sources};
+  var edges=new Dictionary<IntPtr,HashSet<IntPtr>>();
+  void Link(IntPtr a,IntPtr b){if(!edges.TryGetValue(a,out var set))edges[a]=set=new();set.Add(b);}
+  foreach(var pair in MICGPAMNDKM.IJPKEMPIFIH){var c=pair.Value;if(c?.FKMKGNPFLFP==null)continue;foreach(var next in c.FKMKGNPFLFP)if(next!=null){Link(c.Pointer,next.Pointer);Link(next.Pointer,c.Pointer);}}
+  var depths=new Dictionary<IntPtr,int>{{anchor.Pointer,0}};var visit=new Queue<IntPtr>();visit.Enqueue(anchor.Pointer);
+  while(visit.Count>0){var p=visit.Dequeue();if(!edges.TryGetValue(p,out var next))continue;foreach(var n in next)if(!depths.ContainsKey(n)){depths[n]=depths[p]+1;visit.Enqueue(n);}}
+  return sources.GroupBy(c=>depths.TryGetValue(c.Pointer,out int d)?Math.Max(1,d):int.MaxValue).OrderBy(g=>g.Key).Select(g=>g.ToList()).ToList();
+ }
  // One ordered pass survives frame boundaries. A rotating cursor must never
  // turn a farther city's completed quote into priority over a nearer source.
  static IEnumerable<string> BattleSourceSteps(NJHDEHLHENN w,BattleState state,int side,bool direct,MKMOJNAJKJE f){
   var all=ProtectedCities(f);var anchor=w.IJGLCFJOOIK??AOHIBKLOAEI.PNKKPMCJIGA(w.GBHGENNMJCK);
-  var nearby=anchor==null?new List<AFAGFHJONFJ>():all.Where(c=>c.Pointer==anchor.Pointer||anchor.FKMKGNPFLFP?.ToArray().Any(n=>n?.Pointer==c.Pointer)==true||c.FKMKGNPFLFP?.ToArray().Any(n=>n?.Pointer==anchor.Pointer)==true).ToList();
   // A cold loaded battle must not wait for every distant route. Resolve ALL
   // direct road-neighbours first, sort by their validated road ETA, dispatch,
   // then evaluate the rest. This is an emergency tier, not a claim that an
   // unknown remote route is globally slower. Once warm, retain global ranking.
   string stamp=RoadPolicyStamp(f);bool cold=false;
   foreach(var city in all){string key=w.Pointer+":"+w.HIENOINGBCN+":"+f.IBGCLCAIBOL+":"+city.OJPECMNINNA;if(!SavedBattleQuote(city,w,f,key,stamp,out _)){cold=true;break;}}
-  if(cold&&nearby.Count>0&&nearby.Count<all.Count){
-   Note($"battle-cold-local-first war={w.HIENOINGBCN} faction={f.IBGCLCAIBOL} nearby={nearby.Count} remaining={all.Count-nearby.Count} ranking=validated-road-eta-within-tier");
-   var used=new HashSet<IntPtr>(nearby.Select(c=>c.Pointer));
-   foreach(var phase in BattleSourceBatch(w,state,side,direct,f,nearby))yield return phase;
-   foreach(var phase in BattleSourceBatch(w,state,side,direct,f,all.Where(c=>!used.Contains(c.Pointer)).ToList()))yield return phase;
-  }else foreach(var phase in BattleSourceBatch(w,state,side,direct,f,all))yield return phase;
+  var tiers=cold?BattleRoadTiers(all,anchor):new(){all};
+  if(tiers.Count>1)Note($"battle-cold-local-first war={w.HIENOINGBCN} faction={f.IBGCLCAIBOL} nearby={tiers[0].Count} remaining={all.Count-tiers[0].Count} tiers={tiers.Count} ranking=validated-road-eta-within-tier");
+  foreach(var tier in tiers)foreach(var phase in BattleSourceBatch(w,state,side,direct,f,tier))yield return phase;
  }
  static IEnumerable<string> BattleSourceBatch(NJHDEHLHENN w,BattleState state,int side,bool direct,MKMOJNAJKJE f,List<AFAGFHJONFJ> sources){
   var world=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;var destination=w.GBHGENNMJCK;string faction=f.IBGCLCAIBOL,foe=w.EMMJBPMNFAK[1-side];

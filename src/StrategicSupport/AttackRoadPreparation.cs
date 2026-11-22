@@ -12,7 +12,7 @@ public sealed partial class StrategicSupport {
    if(savedBattleRoads.TryGetValue(key,out var known)&&known.World==world&&known.Stamp==stamp&&known.Success){reused++;continue;}
    var route=new RoutePlan();
    foreach(var step in ReliefPathSteps(city.BMBMKPGEHBH,endpoint,f,goal,false,route)){
-    yield return step;if(!LiveTeam(army)||army.m_id!=id||army.m_warInfo!=null||army.m_targetCity!=goal||world!=MICGPAMNDKM.IJPKEMPIFIH?.Pointer||RoadPolicyStamp(f)!=stamp)yield break;
+    yield return step;if(!LiveTeam(army)||army.m_id!=id||army.m_warInfo!=null||army.m_targetCity!=goal||world!=MICGPAMNDKM.IJPKEMPIFIH?.Pointer)yield break;
    }
    if(!route.Success)continue;
    // Same bounded storage as real battle roads. A changed corridor revision
