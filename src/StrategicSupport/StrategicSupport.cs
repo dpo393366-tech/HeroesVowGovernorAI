@@ -8,7 +8,7 @@ using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using UnityEngine;
 
-[BepInPlugin("local.heroesvow.strategicsupport","Strategic Support","1.5.43")]
+[BepInPlugin("local.heroesvow.strategicsupport","Strategic Support","1.5.44")]
 public sealed partial class StrategicSupport:BasePlugin
 {
     static ManualLogSource log;
@@ -37,21 +37,21 @@ public sealed partial class StrategicSupport:BasePlugin
         var h=new Harmony("local.heroesvow.strategicsupport");
         HarmonyMethod H(string n)=>new HarmonyMethod(typeof(StrategicSupport),n);
         try {
-            HookArrivalReports(h); HookManualOrders(h); HookFamilyProtection(h); HookParcelPool(h); HookOffense(h); HookAdministration(h); HookBattle(h); HookInvestment(h);
+            HookConvoyAudit(h); HookArrivalReports(h); HookManualOrders(h); HookFamilyProtection(h); HookParcelPool(h); HookOffense(h); HookAdministration(h); HookBattle(h); HookInvestment(h);
             h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"GHNEGBJANJG"),postfix:H(nameof(AfterPlan)));
             h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"OBIOEOJAHMM"),prefix:H(nameof(BeginStaff)),finalizer:H(nameof(EndStaff)));
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"OBIOEOJAHMM"),prefix:H(nameof(BeforeStaff)));
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"JFOOAMEIMDO"),prefix:H(nameof(BeforeRecruit)));
             HookRecruitmentQuality(h); HookOfficerSelection(h); HookWorldTiming(h); StartPerformance(h);
         } catch(Exception e) {Note("STARTUP FAILED "+e);h.UnpatchSelf();throw;}
-        Note("Strategic Support 1.5.43 loaded; build=family-protection-r121; camp-r117 retained; per-source battle cancellation memory, exact-road lazy return search, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
+        Note("Strategic Support 1.5.44 loaded; build=capacity-evacuation-r124; family-protection-r121 retained; construction parcel and layout rejection diagnostics; per-source battle cancellation memory, exact-road lazy return search, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
     }
     static void Error(Exception e){if(Environment.TickCount64<nextError)return;nextError=Environment.TickCount64+30000;Note("ERROR "+e);log.LogWarning(e.ToString());}
     static bool Ready()
     {
         if(!enabled.Value || NEINKOOBJIH.POMNMBGDDIN==null || MICGPAMNDKM.IJPKEMPIFIH==null)return false;
         var p=MICGPAMNDKM.IJPKEMPIFIH.Pointer;
-        if(world!=p){world=p;ResetManualOrders();ResetWork();ResetDefense();occupations.Clear();huntOrders.Clear();standoffs.Clear();failedIntercepts.Clear();campaignGoals.Clear();capacityOrders.Clear();ResetOffense();ResetCoordination();next.Clear();budgets.Clear();remodelJobs.Clear();economyCursors.Clear();layoutIntents.Clear();statecraftDays.Clear();ResetBattleState();}
+        if(world!=p){world=p;ResetManualOrders();ResetWork();ResetDefense();occupations.Clear();huntOrders.Clear();standoffs.Clear();failedIntercepts.Clear();campaignGoals.Clear();capacityOrders.Clear();ResetOffense();cargoOutcomes.Clear();ResetCoordination();next.Clear();budgets.Clear();remodelJobs.Clear();economyCursors.Clear();layoutIntents.Clear();statecraftDays.Clear();ResetBattleState();}
         return true;
     }
     static bool Eligible(AFAGFHJONFJ c,out MKMOJNAJKJE f)

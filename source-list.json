@@ -46,6 +46,7 @@
     "CapacityPlanning.cs",
     "OfficerRelocation.cs",
     "CapacityTransfer.cs",
+    "CapacityFoodBackfill.cs",
     "OfficerSnapshots.cs",
     "CampaignRecovery.cs",
     "CampBattleRelief.cs",
@@ -58,6 +59,8 @@
     "EmergencySupport.cs",
     "StandoffRecovery.cs",
     "BanditHunt.cs",
+    "HuntMuster.cs",
+    "ConvoyAudit.cs",
     "BarracksPriority.cs",
     "LayoutRevision.cs",
     "NativeTeamOrders.cs",
@@ -168,7 +171,11 @@
     "BattleRetry118Tests.cs",
     "Dispatch119Tests.cs",
     "Attack120Tests.cs",
-    "Family121Tests.cs"
+    "Family121Tests.cs",
+    "Construction123Tests.cs",
+    "Muster123Tests.cs",
+    "Convoy123Tests.cs",
+    "Evacuation124Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

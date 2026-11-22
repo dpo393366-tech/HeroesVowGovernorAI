@@ -54,6 +54,7 @@ public sealed partial class StrategicSupport {
      if(!team){FailedProbe(c,HuntProbeKey(enemy),HuntPower(enemy));Note($"hunt-block city={c.OJPECMNINNA} target={enemy.m_id} reason=native-assembly-empty-or-home-reserve");continue;}
      team.m_targetFoodDay=Math.Max(foodDays.Value,days*2+15);
      int actual=team.GetCombatVal(),required=HuntPower(enemy);
+     RememberHuntPower(c,enemy,team);
      Note($"hunt-power-probe city={c.OJPECMNINNA} target={enemy.m_id} rawSelected={RawArmy(team)} actualAdjusted={actual} requiredAdjusted={required} soldiers={team.GetSoldierNum(false)} sameScale=true");
      if(actual<required){DismissSupport(team);FailedProbe(c,HuntProbeKey(enemy),required);Note($"hunt-block city={c.OJPECMNINNA} target={enemy.m_id} reason=assembled-power-insufficient actualAdjusted={actual} requiredAdjusted={required}");continue;}
      if(!Raider(enemy)||IncomingHostile(c,f)||!AttackPermission(c,f,gov)||team.GetMorale()<60||!OffensivePolicy.FoodSafe(c.LMPMNLLGOEC.OEGNGFBCHFL,ReservedFood(c.OJPECMNINNA),CityFoodFloor(c,f.IBGCLCAIBOL),team.GetOneDayFood(),team.m_targetFoodDay,team.GetFood())){DismissSupport(team);continue;}
@@ -63,6 +64,7 @@ public sealed partial class StrategicSupport {
      Note($"hunt-ordered team={team.m_id} target={enemy.m_id} definition={enemy.m_bma.OJPECMNINNA} source={c.OJPECMNINNA} faction={f.IBGCLCAIBOL} power={team.GetCombatVal()} required={HuntPower(enemy)} travelDays={days} nativeAssembly=true");break;
     }catch{if(team){huntOrders.Remove(team.Pointer);if(team.m_deployState==AKOPKFPKJPP.Assemble)DismissSupport(team);}throw;}
    }
+   foreach(var phase in HuntMusterSteps(f,enemy))yield return phase;
   }
  }
  static void EndHunt(HuntOrder o,string reason){

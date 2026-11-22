@@ -50,9 +50,23 @@ public sealed partial class StrategicSupport
         var shortlist=all.GroupBy(x=>x.Action.Key).Select(g=>g.First()).ToList();
         long cash=Math.Max(0L,(long)city.LMPMNLLGOEC.DNOGPFHMOMO-LocalReserve(city))+Math.Max(0L,(long)faction.DNOGPFHMOMO-InvestmentReserve(faction));
         var normal=ReadCivicFlow(city);var actualGoals=ReadGoals(city);
-        var populationModel=PopulationSnapshot(city);List<int> steps=new();foreach(bool step in CityLayoutOptimizer.Solve(shortlist.Select(x=>x.Action).ToList(),actualGoals.Needs,result=>steps=result,normal.Popular,normal.Security,city.NMDMENNPKDM(),city.NMKKHJEMMFH(),normal.Population,CityEffects(city),populationModel.Gain))yield return false;
-        if(steps.Count==0){complete(null,null);yield break;}
-        if(revision.Change(ReadLayoutRevision(city,faction))!=null){complete(null,null);yield break;}
+        long planStarted=Environment.TickCount64;int scanSteps=0;
+        var populationModel=PopulationSnapshot(city);List<int> steps=new();foreach(bool step in CityLayoutOptimizer.Solve(shortlist.Select(x=>x.Action).ToList(),actualGoals.Needs,result=>steps=result,normal.Popular,normal.Security,city.NMDMENNPKDM(),city.NMKKHJEMMFH(),normal.Population,CityEffects(city),populationModel.Gain)){
+            if(++scanSteps%2048==0&&Gate("layout-working:"+city.OJPECMNINNA,30))Note($"layout-working city={city.OJPECMNINNA} legalChoices={shortlist.Count} scanSteps={scanSteps} elapsedIncludingQueueMs={Environment.TickCount64-planStarted}");
+            yield return false;
+        }
+        if(steps.Count==0){
+            if(Gate("layout-empty:"+city.OJPECMNINNA,30))Note($"layout-empty city={city.OJPECMNINNA} legalChoices={shortlist.Count} zeroLimitChoices={shortlist.Count(x=>x.Action.Limit<=0)} popular={normal.Popular} security={normal.Security} population={normal.Population} populationRaw={populationModel.Raw} populationFull={populationModel.Full} nativeBuildScope={nativeBuildScope} buildings=[{string.Join(";",shortlist.GroupBy(x=>x.Action.Id).Select(g=>$"{g.Key}:sites={g.Count()}:limit={g.First().Action.Limit}:priority={g.First().Action.Priority}:popular={g.First().Action.PopularFlow}:security={g.First().Action.SecurityFlow}:population={g.First().Action.PopulationAdd}"))}]");
+            complete(null,null);yield break;
+        }
+        var currentRevision=ReadLayoutRevision(city,faction);
+        if(revision.StructureChange(currentRevision) is string invalidated){Note($"layout-plan-discard city={city.OJPECMNINNA} reason={invalidated} legalChoices={shortlist.Count} elapsedIncludingQueueMs={Environment.TickCount64-planStarted}");complete(null,null);yield break;}
+        // Completion of existing work or a changing goal counter does not
+        // invalidate vacant geometry. The first purchase still rechecks native
+        // caps, money, materials, occupancy and actual civic flows. Replan the
+        // remainder instead of repeatedly abandoning every construction action.
+        bool progressed=revision.Progress!=currentRevision.Progress;
+        if(progressed){steps=new(){steps[0]};Note($"layout-progress-revalidate city={city.OJPECMNINNA} first={shortlist[steps[0]].Action.Id} remainderReplanned=true");}
         intent=new(){Faction=faction.IBGCLCAIBOL,Governor=city.LMPMNLLGOEC.IPJHOOJBCKI,Until=Environment.TickCount64+600000,Revision=revision};
         foreach(int step in steps)intent.Keys.Add(shortlist[step].Action.Key);
         if(steps.Count>1&&Gate("layout-log:"+city.OJPECMNINNA,10))Note($"layout-plan city={city.OJPECMNINNA} depth={steps.Count} sequence={string.Join(" -> ",steps.Select(i=>shortlist[i].Action.Id+"@"+shortlist[i].Action.District))} cashBudget={cash}");

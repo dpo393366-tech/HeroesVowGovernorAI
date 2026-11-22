@@ -15,7 +15,7 @@
 | 보이는 파일 | 용도 |
 |---|---|
 | **HeroesVow_GovernorAI_Standalone.zip** | **일반 사용자가 받을 설치 파일** |
-| HeroesVowGovernorAI-1.5.43-source.zip | 코드를 수정하거나 빌드하는 개발자용 소스 |
+| HeroesVowGovernorAI-1.5.44-source.zip | 코드를 수정하거나 빌드하는 개발자용 소스 |
 | SHA256SUMS.txt | 다운로드 파일 확인용 정보 |
 | Source code (zip) / Source code (tar.gz) | GitHub가 제공하는 소스 묶음 |
 

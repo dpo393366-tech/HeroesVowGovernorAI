@@ -56,6 +56,9 @@ public sealed partial class StrategicSupport {
   }
  }
  static IEnumerable<string> CityShipmentSteps(AFAGFHJONFJ source,AFAGFHJONFJ target,MKMOJNAJKJE f,int maximumUnits,long wantedPower,string reason){
+  foreach(var phase in CityShipmentCore(source,target,f,maximumUnits,wantedPower,reason,true))yield return phase;
+ }
+ static IEnumerable<string> CityShipmentCore(AFAGFHJONFJ source,AFAGFHJONFJ target,MKMOJNAJKJE f,int maximumUnits,long wantedPower,string reason,bool allowBackfill){
   var world=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;
   bool Valid()=>Ready()&&CurrentFaction(f)&&MICGPAMNDKM.IJPKEMPIFIH?.Pointer==world&&source.Pointer!=target.Pointer&&SafeLogisticsEndpoint(source,f)&&SafeLogisticsEndpoint(target,f);
   if(!Valid()||maximumUnits<=0)yield break;
@@ -70,11 +73,15 @@ public sealed partial class StrategicSupport {
   bool overflow=reason=="capacity-overflow";
   long keepPower=overflow?0:BorderThreat(source,f,teams);
   int keepUnits=overflow?Math.Max(0,source.JNLIOIHLDHH()):(OccupationVulnerable(source)?Math.Max(2,minUnits.Value):minUnits.Value);
+  if(reason=="hunt-muster"){double retention=Retention(source,f);keepPower=Math.Max(keepPower,(long)Math.Ceiling(homePower*retention));keepUnits=Math.Max(keepUnits,(int)Math.Ceiling(home.Count*retention));}
   int limit=Math.Min(maximumUnits,CapacityRoom(target,teams));
   if(reason=="capacity-overflow")limit=Math.Min(limit,Math.Max(0,home.Count-source.JNLIOIHLDHH()));
-  else wantedPower=Math.Min(wantedPower,HomeProtectionNeed(target,f,teams));
+  else if(reason!="hunt-muster")wantedPower=Math.Min(wantedPower,HomeProtectionNeed(target,f,teams));
   var selected=new List<DHKINGPDKJJ>();long movedPower=0;
-  foreach(var a in home.Where(a=>LogisticsUnit(a,reserved)).OrderBy(a=>overflow?(long)a.GNCKPEPJDGF():-(long)a.GNCKPEPJDGF())){
+  // If the source is already below border defense needs, retain its strongest
+  // troops. Else save more soldiers per scarce destination slot first.
+  bool criticalDefense=overflow&&BorderThreat(source,f,teams)>=homePower*.6;
+  foreach(var a in home.Where(a=>LogisticsUnit(a,reserved)).OrderByDescending(a=>overflow?(criticalDefense?-(long)a.GNCKPEPJDGF():(long)a.FGHFOLKBHDL):(long)a.GNCKPEPJDGF())){
    if(selected.Count>=limit||reason!="capacity-overflow"&&movedPower>=wantedPower)break;
    long value=Math.Max(0,a.GNCKPEPJDGF());
    if(home.Count-selected.Count-1<keepUnits||homePower-movedPower-value<keepPower)continue;
@@ -90,9 +97,21 @@ public sealed partial class StrategicSupport {
   long destinationSoldiers=targetUnits.Values.Sum(n=>(long)n);
   // Supply existing residents while the cargo travels plus five days for the
   // resulting garrison. Cargo is carried stock, not expedition upkeep.
-  long required=Math.Max(0,(destinationSoldiers+movingSoldiers)*5+destinationSoldiers*days-target.LMPMNLLGOEC.OEGNGFBCHFL-ConvoyFood(target));
+  long targetFoodGoal=(destinationSoldiers+movingSoldiers)*5+destinationSoldiers*days;
+  long incomingFood=overflow?TimelyCargoFood(target,days):ConvoyFood(target);
+  long required=Math.Max(0,targetFoodGoal-target.LMPMNLLGOEC.OEGNGFBCHFL-incomingFood);
   long spare=Math.Max(0,(long)row.OEGNGFBCHFL-ReservedFood(source.OJPECMNINNA)-Math.Max(10000,keptSoldiers*5));
-  if(required>spare||required>int.MaxValue){Note($"city-logistics-block source={source.OJPECMNINNA} target={target.OJPECMNINNA} reason=destination-provisions need={required} spare={spare}");yield break;}
+  if(overflow&&allowBackfill&&required>spare&&autoSupply?.Value==true){
+   // Another safe city can fund evacuation; the already overfull source does
+   // not have to finance all of the recipient's residents on its own.
+   foreach(var phase in CapacityFoodBackfillSteps(source,target,f,Math.Max(0,targetFoodGoal-spare),days))yield return phase;
+   if(!Valid())yield break;
+   // Rebuild selection, capacity, food and road after yields. Only one funding
+   // pass is allowed; failed funding cannot cause recursive dispatch loops.
+   foreach(var phase in CityShipmentCore(source,target,f,maximumUnits,wantedPower,reason,false))yield return phase;
+   yield break;
+  }
+  if(required>spare||required>int.MaxValue){Note($"city-logistics-block source={source.OJPECMNINNA} target={target.OJPECMNINNA} reason=destination-provisions need={required} spare={spare} overflow={overflow} sourceFood={row.OEGNGFBCHFL} keptSoldiers={keptSoldiers} targetFood={target.LMPMNLLGOEC.OEGNGFBCHFL} timelyIncomingFood={incomingFood} targetSoldiers={destinationSoldiers} movingSoldiers={movingSoldiers} etaDays={days}");yield break;}
   if(!Valid()||CapacityRoom(target,AttackTeams())<selected.Count)yield break;
   DispatchCityConvoy(source,target,f,selected,(int)required,route,days,reason);
  }

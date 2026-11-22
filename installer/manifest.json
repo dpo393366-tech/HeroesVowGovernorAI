@@ -1,11 +1,11 @@
 {
   "id": "governorai",
   "title": "도독 AI · 국고 분배 · 자동 등용",
-  "version": "1.5.43 / 설정1.4.0",
+  "version": "1.5.44 / 설정1.4.0",
   "files": [
     {
       "path": "BepInEx/plugins/StrategicSupport/StrategicSupport.dll",
-      "sha256": "817E5DD66C47F47DAB94B96F0C762B0B0AE0B2D8B1CE82895C443CC2453398A3"
+      "sha256": "0EFCF9B4927BD98BDF19F43D0B4F365F1CDCB8447698E417EB121716B6634E87"
     },
     {
       "path": "BepInEx/plugins/TreasuryAwards/TreasuryAwards.dll",

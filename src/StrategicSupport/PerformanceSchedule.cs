@@ -98,13 +98,13 @@ public sealed partial class StrategicSupport
    if(construction.Value)for(int n=0;n<buildsPerCity.Value;n++){
     if(!CurrentCity(c,f,governor))yield break;
     bool purchased=false;
-    using(var scan=BuildSteps(c,f).GetEnumerator())while(scan.MoveNext()){purchased|=scan.Current;yield return scan.Current?"build-commit":"build-scan";if(!CurrentCity(c,f,governor))yield break;}
+    using(var scan=ConstructionSlices(BuildSteps(c,f)).GetEnumerator())while(scan.MoveNext()){purchased|=scan.Current;yield return scan.Current?"build-commit":"build-scan";if(!CurrentCity(c,f,governor))yield break;}
     if(!purchased)break;built++;
    }
    InvestmentAudit(c,$"evaluated built={built} treasury={f.DNOGPFHMOMO} cityCash={c.LMPMNLLGOEC.DNOGPFHMOMO} scheduled=true");
    // Legal empty plots get serviced before the much larger rebuild search.
    if(CurrentCity(c,f,governor)){
-    using(var renewal=RenewalSteps(c,f).GetEnumerator())while(renewal.MoveNext()){
+    using(var renewal=ConstructionSlices(RenewalSteps(c,f)).GetEnumerator())while(renewal.MoveNext()){
      yield return renewal.Current?"renewal-commit":"renewal-scan";if(!CurrentCity(c,f,governor))yield break;
     }
    }
@@ -115,6 +115,20 @@ public sealed partial class StrategicSupport
   if(CurrentCity(c,f,governor)&&domestic.Value&&AIGate("domestic:"+c.OJPECMNINNA,f.IBGCLCAIBOL,30)&&DayReady("domestic:"+c.OJPECMNINNA,DecisionDays(f.IBGCLCAIBOL))){
    DayReady("domestic:"+c.OJPECMNINNA,0,true);AssignDomestic(c,f);
   }yield return "domestic";
+ }
+ // Geometry searches yield for individual cells and the optimizer yields for
+ // tiny candidate batches. Sending every such yield behind all world cities
+ // stretches a small CPU job across game months. Coalesce read-only scan steps
+ // within a small CPU slice, still inside the unchanged global frame budget.
+ // A mutation always returns immediately so the caller rechecks ownership.
+ static IEnumerable<bool> ConstructionSlices(IEnumerable<bool> source,double sliceMs=.5,int maxSteps=256){
+  using var scan=source.GetEnumerator();var timer=Stopwatch.StartNew();int count=0;
+  while(scan.MoveNext()){
+   bool committed=scan.Current;
+   if(committed||++count>=maxSteps||timer.Elapsed.TotalMilliseconds>=sliceMs){
+    yield return committed;count=0;timer.Restart();
+   }
+  }
  }
  static IEnumerable<string> SafePhases(IEnumerable<string> phases){using(var it=phases.GetEnumerator())while(true){bool more;try{more=it.MoveNext();}catch(Exception e){Error(e);yield break;}if(!more)yield break;yield return it.Current;}}
  static System.Reflection.MethodInfo awardsApi;

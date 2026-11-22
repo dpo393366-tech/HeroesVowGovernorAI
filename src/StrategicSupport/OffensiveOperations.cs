@@ -35,7 +35,7 @@ public sealed partial class StrategicSupport
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"LeaveCity"),postfix:H(nameof(RecordAttackDeparture)));
   h.Patch(AccessTools.Method(typeof(Wa_ArmyCtrl),"DrawNavigationPath"),prefix:H(nameof(BeforeArmyNavigationDrawing)));
  }
- static void ResetOffense(){failedCombatProbes.Clear();attackOrders.Clear();attackPlanning.Clear();attackPlanningCosts.Clear();}
+ static void ResetOffense(){failedCombatProbes.Clear();attackOrders.Clear();attackPlanning.Clear();attackPlanningCosts.Clear();huntMusters.Clear();huntPowerSamples.Clear();}
  static bool SameAttack(AttackOrder o)=>o.Team&&o.Team.m_id==o.Id&&o.Team.m_belongPower==o.Faction&&o.Team.m_assembleCity==o.City&&o.Team.m_targetCity==o.Target&&!o.Team.m_isEnterCity;
  static int OffenseCashReserve(MKMOJNAJKJE f){
   if(f==null||offensive?.Value!=true)return 0;
@@ -134,6 +134,7 @@ public sealed partial class StrategicSupport
    if(NEINKOOBJIH.MIPFHCKDJOK-o.Day>=60){attackOrders.Remove(pair.Key);o.Team.Dismiss(true,false);Note($"offense-cancel team={o.Id} reason=assembly-timeout");}
   }
   var teams=AttackTeams();string reason=AttackReadiness(c,f,governor,teams);
+  if(reason==null&&HuntMusterCity(c))reason="raider-muster-incoming";
   if(reason!=null){AttackSkip(c,f,teams,reason);yield break;}
   attackPlanning.TryGetValue(f.IBGCLCAIBOL,out int holders);attackPlanning[f.IBGCLCAIBOL]=holders+1;
   attackPlanningCosts[c.OJPECMNINNA]=(f.IBGCLCAIBOL,MobilizationCost(c));

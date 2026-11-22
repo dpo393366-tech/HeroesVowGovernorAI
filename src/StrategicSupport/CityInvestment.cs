@@ -186,7 +186,7 @@ public sealed partial class StrategicSupport
         PABIPDOFBFG best=null;PEGMABENGBB spot=null;JNHOOCJJPJO block=null;int priorityBest=0;
         var choices=new List<LayoutChoice>();
         var vacantGeometry=new Dictionary<string,List<PEGMABENGBB>>();
-        var blocked=new Dictionary<string,int>();int candidates=0;
+        var blocked=new Dictionary<string,int>();int candidates=0,parcelProbes=0,sizeRejected=0,nativeRejected=0;
         var definitions=new List<PABIPDOFBFG>();foreach(var kv in AEHAGJAKNEK.ACIGFKMDOKE)definitions.Add(kv.Value);
         var slice=Stopwatch.StartNew();int probes=0;
         foreach(var b in definitions){
@@ -222,8 +222,9 @@ public sealed partial class StrategicSupport
                 foreach(var p in places){
                     if(++probes>=32||slice.Elapsed.TotalMilliseconds>=1){yield return false;probes=0;slice.Restart();}
                     if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=worldAtStart||c.LMPMNLLGOEC.LMMNKIOAGLC!=owner||c.LMPMNLLGOEC.IPJHOOJBCKI!=governor)yield break;
-                    if((long)p.PABEMCAGKJJ*p.HAPLIFADGBA!=(long)b.MLAJLJKFGBD*b.PNPLBNAFMCM)continue;
-                    if(!p.BFPBNAKIKEO(b))continue;
+                    parcelProbes++;
+                    if((long)p.PABEMCAGKJJ*p.HAPLIFADGBA!=(long)b.MLAJLJKFGBD*b.PNPLBNAFMCM){sizeRejected++;continue;}
+                    if(!p.BFPBNAKIKEO(b)){nativeRejected++;continue;}
                     if(!CurrentPlot(c,d.District,p,Footprint(p))){blocked.TryGetValue("occupied-or-stale-parcel",out int staleCount);blocked["occupied-or-stale-parcel"]=staleCount+1;continue;}
                     var projected=new List<BuildingEffectsPolicy.Building>(d.Effects){BuildingProfile(b,d.District.OJPECMNINNA,PlotCells(p))};double structural=BuildingEffectsPolicy.Evaluate(projected).Value-d.Output.Value;
                     double score=InvestmentPolicy.Score(priority,benefit+structural,b.NPCHPDNFAME,b.MLAJLJKFGBD*b.PNPLBNAFMCM);
@@ -232,14 +233,14 @@ public sealed partial class StrategicSupport
             }
         }
         LayoutChoice choice=null;LayoutIntent intent=null;
-        if(initialRevision.Change(ReadLayoutRevision(c,f)) is string changed){Note($"layout-scan-discard city={c.OJPECMNINNA} reason={changed}");yield break;}
+        if(initialRevision.StructureChange(ReadLayoutRevision(c,f)) is string changed){Note($"layout-scan-discard city={c.OJPECMNINNA} reason={changed}");yield break;}
         foreach(bool step in ChooseLayoutSteps(c,f,goals,choices,(x,y)=>{choice=x;intent=y;})){yield return false;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=worldAtStart||!CurrentCity(c,f,governor))yield break;}
         if(choice!=null){best=choice.Building;spot=choice.Place;block=choice.District;priorityBest=choice.Action.Priority;}
-        if(best==null||spot==null){var reasons=new List<string>();foreach(var pair in blocked)reasons.Add(pair.Key+"="+pair.Value);InvestmentAudit(c,$"no-build-candidate allowed={candidates} publicDistricts={districts.Count} blocked=[{string.Join(",",reasons)}]");yield break;}
+        if(best==null||spot==null){var reasons=new List<string>();foreach(var pair in blocked)reasons.Add(pair.Key+"="+pair.Value);InvestmentAudit(c,$"no-build-candidate allowed={candidates} publicDistricts={districts.Count} legalChoices={choices.Count} parcelProbes={parcelProbes} sizeRejected={sizeRejected} nativeRejected={nativeRejected} nativeBuildScope={nativeBuildScope} blocked=[{string.Join(",",reasons)}]");yield break;}
         if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=worldAtStart||c.LMPMNLLGOEC.LMMNKIOAGLC!=owner||c.LMPMNLLGOEC.IPJHOOJBCKI!=governor)yield break;
         reserve=LocalReserve(c);
         string commitBlock=BuildBlock(c,f,best,reserve);
-        if(commitBlock==null&&initialRevision.Change(ReadLayoutRevision(c,f)) is string revisionChange)commitBlock="plan-inputs-changed:"+revisionChange;
+        if(commitBlock==null&&initialRevision.StructureChange(ReadLayoutRevision(c,f)) is string revisionChange)commitBlock="plan-inputs-changed:"+revisionChange;
         var stillMissing=BarracksMissing(c,f);
         if(commitBlock==null)commitBlock=CivicBuildBlock(c,best);
         if(commitBlock==null&&!CurrentPlot(c,block,spot,choice.Action.Tiles))commitBlock="parcel-changed-or-occupied";

@@ -4,10 +4,10 @@ class UpdaterTests {
  static void Reject(Action a,string why){bool failed=false;try{a();}catch{failed=true;}Check(failed,why);}
  static byte[] Pack(Dictionary<string,byte[]> contents,Action<Dictionary<string,byte[]>> change=null){
   var entries=new Dictionary<string,byte[]>();foreach(var p in contents)entries["GovernorAI/payload/"+p.Key+".dll"]=p.Value;
-  entries["GovernorAI/manifest.json"]=JsonSerializer.SerializeToUtf8Bytes(new{id="governorai",version="1.5.43",files=contents.Select(p=>new{path=Engine.Relative(p.Key),sha256=Engine.Hash(p.Value)}).ToArray()});
+  entries["GovernorAI/manifest.json"]=JsonSerializer.SerializeToUtf8Bytes(new{id="governorai",version="1.5.44",files=contents.Select(p=>new{path=Engine.Relative(p.Key),sha256=Engine.Hash(p.Value)}).ToArray()});
   change?.Invoke(entries);using var m=new MemoryStream();using(var z=new ZipArchive(m,ZipArchiveMode.Create,true))foreach(var e in entries){using var s=z.CreateEntry(e.Key).Open();s.Write(e.Value);}return m.ToArray();
  }
- static byte[] Metadata(byte[] zip)=>JsonSerializer.SerializeToUtf8Bytes(new{draft=false,prerelease=false,assets=new[]{new{name=Engine.AssetName,browser_download_url=Engine.DownloadPrefix+"v1.5.43/"+Engine.AssetName,digest="sha256:"+Engine.Hash(zip)}}});
+ static byte[] Metadata(byte[] zip)=>JsonSerializer.SerializeToUtf8Bytes(new{draft=false,prerelease=false,assets=new[]{new{name=Engine.AssetName,browser_download_url=Engine.DownloadPrefix+"v1.5.44/"+Engine.AssetName,digest="sha256:"+Engine.Hash(zip)}}});
  static int Main(string[] args){try{Run(args);return 0;}catch(Exception e){Console.WriteLine(e);return 1;}}
  static void Run(string[] args){
   var old=Engine.Names.ToDictionary(n=>n,n=>File.ReadAllBytes(Path.Combine(args[0],n+".dll")));
@@ -16,7 +16,7 @@ class UpdaterTests {
   void Reset(){foreach(var n in Engine.Names){var p=Engine.Destination(root,n);Directory.CreateDirectory(Path.GetDirectoryName(p));File.WriteAllBytes(p,old[n]);}
    var receipt=Path.Combine(Engine.StateRoot(root),"installed.json");if(File.Exists(receipt))File.Delete(receipt);logs.Clear();}
   bool Matches(Dictionary<string,byte[]> files)=>Engine.Names.All(n=>Engine.Hash(File.ReadAllBytes(Engine.Destination(root,n)))==Engine.Hash(files[n]));
-  Check(Engine.PluginVersion(newer["StrategicSupport"],"StrategicSupport")==new Version("1.5.43"),"Actual BepInPlugin version parser");
+  Check(Engine.PluginVersion(newer["StrategicSupport"],"StrategicSupport")==new Version("1.5.44"),"Actual BepInPlugin version parser");
   Check(Engine.PluginVersion(newer["TreasuryAwards"],"TreasuryAwards")==new Version("1.4.3"),"Treasury version parser");
   Check(Engine.PluginVersion(newer["HeroesVowSettings"],"HeroesVowSettings")==new Version("1.4.0"),"Settings version parser");
   Check(!AppDomain.CurrentDomain.GetAssemblies().Any(a=>Engine.Names.Contains(a.GetName().Name)),"Metadata inspection loaded a plugin");
