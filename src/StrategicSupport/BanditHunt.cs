@@ -29,7 +29,9 @@ public sealed partial class StrategicSupport {
   foreach(var enemy in targets){
    var candidates=new List<(AFAGFHJONFJ City,int Days)>();
    var owned=f.PJMLPLDPEIM();if(owned==null)yield break;
-   foreach(var city in owned.ToArray()){
+   // Materialize before yielding: a destroyed/moved target is checked again
+   // below, never dereferenced by a deferred LINQ predicate on the next frame.
+   foreach(var city in owned.ToArray().Where(c=>c?.LMPMNLLGOEC!=null&&RaiderNear(c,f,enemy)).ToArray()){
     yield return "hunt-source";if(!CurrentFaction(f)||!Raider(enemy))break;
     if(city?.LMPMNLLGOEC==null)continue;
     bool near=RaiderNear(city,f,enemy),permission=AttackPermission(city,f,city.LMPMNLLGOEC.IPJHOOJBCKI),danger=IncomingHostile(city,f);
@@ -39,7 +41,7 @@ public sealed partial class StrategicSupport {
     if(huntOrders.Values.Any(o=>o.Faction==f.IBGCLCAIBOL&&o.TargetId==enemy.m_id&&LiveTeam(o.Team)))continue;
     if(!ViableSource(city,teams,AttackReserved(teams))||AttackStock(city,f,teams).Budget<=0||f.DNOGPFHMOMO<MobilizationCost(city))continue;
     if(!CombatProbeReady(city,HuntProbeKey(enemy),HuntPower(enemy),teams))continue;
-    if(HuntRoute(city,f,enemy,out int days))candidates.Add((city,days));else if(Gate("hunt-route:"+enemy.m_id+":"+city.OJPECMNINNA,15))Note($"hunt-block target={enemy.m_id} city={city.OJPECMNINNA} reason=route-or-travel-limit");
+    if(HuntRoute(city,f,enemy,out int days))candidates.Add((city,days));else if(Gate("hunt-route:"+enemy.m_id+":"+city.OJPECMNINNA,15))Note($"hunt-block target={enemy.m_id} city={city.OJPECMNINNA} reason={(days>0?"travel-limit":"route-unavailable")} travelDays={days} limitDays=20");
    }
    foreach(var choice in candidates.OrderBy(x=>x.Days)){
     yield return "hunt-dispatch";if(!CurrentFaction(f)||!Raider(enemy)||enemy.m_warInfo!=null)break;

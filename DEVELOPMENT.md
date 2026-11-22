@@ -1,3 +1,13 @@
+## r142: cold loaded-battle relief and hunt scheduling
+
+Live r141 verification: target22175 (Xiongnu) was hunted by team23175 from CS1032 at 04:02:09, with five officers and100000 soldiers, adjusted918129 vs required593108. Actual battle entry04:02:33; target reached zero soldiers04:03:46;61359 survivors received a return order and reached home04:04:48. This verifies that particular r141 hunt, not every raider or r142 performance.
+
+Remaining failure: a save loaded with Chengdu already fighting bypassed pre-march preparation. Queue wait3750ms plus44 cold quotes12406ms preceded the first support decision. Nearest ETA20.6s exceeded estimated remaining hold10.3s then. No relief was dispatched. r142 splits a cold pass into direct-road-neighbour and remaining batches, each sorted by validated road ETA; warm passes retain global ranking. Unknown remote paths are not claimed slower. Existing dispatch reservations and final route/policy/live-force checks remain mandatory.
+
+Battle planning and other critical jobs alternate within the existing critical share; hunt gets an existing urgent lane. Unrelated cities are filtered before hunt-source and muster-destination yields. Existing20-day hunt/convoy limit is unchanged; logging now distinguishes path failure from travel limit. No additional frame time budget or troop movement acceleration.
+
+Verification:27 focused mock assertions including100 remote battle sources,200 unrelated hunt cities and300 watchers;3 negative controls restore the whole-world cold batch, unrelated city yields or shared watcher FIFO and must fail. Existing regression suite, actual native reference build and hook checks also pass. Native actions in the mock suite are substitutes; live r142 support latency and FPS remain unverified.
+
 ## r141: 공격 전력 누락·토벌 집결·행군 중 지원 준비
 
 Observed in the reported session: Shuofang attack 22225 was approved with requiredAdjusted=1350 and 10000 soldiers while field defenders were present. Wuwei army22629 had30000 soldiers against188464 at battle start. Its cold support pass calculated43 routes in7453ms before ranking; nearest ETA40.8 exceeded observed hold28.9. Chengdu army22740 had10000 against205890; initial routing did not produce a dispatch before that battle ended.

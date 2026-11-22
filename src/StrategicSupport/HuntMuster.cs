@@ -42,7 +42,7 @@ public sealed partial class StrategicSupport {
   // their cargo still reaches its friendly city; only the extra attack claim ends.
   if(huntMusters.TryGetValue(key,out var old)&&old.Until<day){huntMusters.Remove(key);Note($"hunt-muster-ended target={enemy.m_id} city={old.City} reason=deadline nativeShipmentsRetained=true");yield break;}
   var destinations=new List<(AFAGFHJONFJ City,int Days)>();
-  foreach(var c in cities){
+  foreach(var c in cities.Where(c=>c?.LMPMNLLGOEC!=null&&RaiderNear(c,f,enemy)).ToArray()){
    yield return "hunt-muster-destination";if(!CurrentFaction(f)||!Raider(enemy)||enemy.m_warInfo!=null)yield break;
    if(!RaiderNear(c,f,enemy))continue;
    string blocked=!SafeLogisticsEndpoint(c,f)?"unsafe-logistics-endpoint":!AttackPermission(c,f,c.LMPMNLLGOEC.IPJHOOJBCKI)?"governor-policy":CapacityRoom(c,AttackTeams())<=0?"staging-full":HuntMusterMissing(c,f,enemy)<=0?"no-measured-deficit-or-inbound-covered":null;

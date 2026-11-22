@@ -3,12 +3,28 @@ public sealed partial class StrategicSupport {
  // One ordered pass survives frame boundaries. A rotating cursor must never
  // turn a farther city's completed quote into priority over a nearer source.
  static IEnumerable<string> BattleSourceSteps(NJHDEHLHENN w,BattleState state,int side,bool direct,MKMOJNAJKJE f){
+  var all=ProtectedCities(f);var anchor=w.IJGLCFJOOIK??AOHIBKLOAEI.PNKKPMCJIGA(w.GBHGENNMJCK);
+  var nearby=anchor==null?new List<AFAGFHJONFJ>():all.Where(c=>c.Pointer==anchor.Pointer||anchor.FKMKGNPFLFP?.ToArray().Any(n=>n?.Pointer==c.Pointer)==true||c.FKMKGNPFLFP?.ToArray().Any(n=>n?.Pointer==anchor.Pointer)==true).ToList();
+  // A cold loaded battle must not wait for every distant route. Resolve ALL
+  // direct road-neighbours first, sort by their validated road ETA, dispatch,
+  // then evaluate the rest. This is an emergency tier, not a claim that an
+  // unknown remote route is globally slower. Once warm, retain global ranking.
+  string stamp=RoadPolicyStamp(f);bool cold=false;
+  foreach(var city in all){string key=w.Pointer+":"+w.HIENOINGBCN+":"+f.IBGCLCAIBOL+":"+city.OJPECMNINNA;if(!SavedBattleQuote(city,w,f,key,stamp,out _)){cold=true;break;}}
+  if(cold&&nearby.Count>0&&nearby.Count<all.Count){
+   Note($"battle-cold-local-first war={w.HIENOINGBCN} faction={f.IBGCLCAIBOL} nearby={nearby.Count} remaining={all.Count-nearby.Count} ranking=validated-road-eta-within-tier");
+   var used=new HashSet<IntPtr>(nearby.Select(c=>c.Pointer));
+   foreach(var phase in BattleSourceBatch(w,state,side,direct,f,nearby))yield return phase;
+   foreach(var phase in BattleSourceBatch(w,state,side,direct,f,all.Where(c=>!used.Contains(c.Pointer)).ToList()))yield return phase;
+  }else foreach(var phase in BattleSourceBatch(w,state,side,direct,f,all))yield return phase;
+ }
+ static IEnumerable<string> BattleSourceBatch(NJHDEHLHENN w,BattleState state,int side,bool direct,MKMOJNAJKJE f,List<AFAGFHJONFJ> sources){
   var world=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;var destination=w.GBHGENNMJCK;string faction=f.IBGCLCAIBOL,foe=w.EMMJBPMNFAK[1-side];
   bool Valid()=>Ready()&&CurrentFaction(f)&&MICGPAMNDKM.IJPKEMPIFIH?.Pointer==world&&battles.TryGetValue(w.Pointer,out var current)&&ReferenceEquals(current,state)&&w.HIENOINGBCN==state.Name&&IsDirect(w)==direct&&w.EMMJBPMNFAK!=null&&w.EMMJBPMNFAK.Length==2&&w.EMMJBPMNFAK[side]==faction&&w.EMMJBPMNFAK[1-side]==foe&&War(f,foe)&&Vector3.Distance(destination,w.GBHGENNMJCK)<.01f&&Soldiers(w,0,direct)>0&&Soldiers(w,1,direct)>0;
   if(!Valid())yield break;
   RefreshBattleCorridors(AttackTeams());
   long routeStarted=Environment.TickCount64;int reused=0,computed=0;
-  string roadStamp=RoadPolicyStamp(f);var sources=ProtectedCities(f);var routes=new Dictionary<string,double>();var skipped=new List<string>();
+  string roadStamp=RoadPolicyStamp(f);var routes=new Dictionary<string,double>();var skipped=new List<string>();
   // Finish the candidate batch before ranking. Pending is not unreachable.
   // Each native path/graph operation yields under the existing frame budget.
   foreach(var city in sources){
