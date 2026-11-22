@@ -80,6 +80,30 @@ public sealed partial class StrategicSupport {
    if(item.City.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL&&HomeProtectionNeed(item.City,f,AttackTeams())>0){goal.Returning=true;Note($"aftermath-hold-offense team={t.m_id} city={item.City.OJPECMNINNA} reason=residual-home-defense");break;}
   }
  }
+ // Predict the native split's WHOLE officer groups before creating a child.
+ // GenDivideTeam sorts a copy with HCEFMHDIIAE, walks it backwards and sums
+ // GNCKPEPJDGF(hero, firstUnit). Total combat-power / total-slot averages are
+ // not a capacity bound; halving that average can jump over every valid split.
+ static long ReturnSplitPower(Wo_DeployTeamCtrl t,int room){
+  if(!t||room<=0||t.m_listHero==null||t.m_listHero.Count<2||t.m_dicDeployArmy==null)return 0;
+  var sorted=new Il2CppSystem.Collections.Generic.List<CLAGKDECFID>();
+  foreach(var h in t.m_listHero){if(h==null||!t.m_dicDeployArmy.ContainsKey(h.OJPECMNINNA))return 0;sorted.Add(h);}
+  AOHIBKLOAEI.HCEFMHDIIAE(ref sorted,0,sorted.Count-1);
+  var seen=new HashSet<IntPtr>();long power=0;int picked=0;
+  for(int i=sorted.Count-1;i>=0;i--){
+   var h=sorted[i];var list=t.m_dicDeployArmy[h.OJPECMNINNA];if(list==null)return 0;
+   var group=new HashSet<IntPtr>();long groupPower=0;
+   for(int j=0;j<list.Count;j++){var unit=list[j];if(unit==null||!group.Add(unit.Pointer)||seen.Contains(unit.Pointer))return 0;groupPower+=Math.Max(0,unit.GNCKPEPJDGF(h,j==0));}
+   if(seen.Count+group.Count>room||picked+1==sorted.Count)break;
+   seen.UnionWith(group);power+=groupPower;picked++;
+  }
+  if(picked==0||seen.Count==0||power<=0||power>int.MaxValue-4096L)return 0;
+  // Native comparison is strict and uses float budget*1.1. Include the exact
+  // prefix even near float rounding boundaries; post-split guards remain.
+  int nativeBudget=(int)Math.Floor(power/1.1)+1;
+  while((float)nativeBudget*1.1f<=(float)power)nativeBudget++;
+  return (long)Math.Ceiling(nativeBudget*1.100001);
+ }
  static IEnumerable<string> ReturnPartitionSteps(Wo_DeployTeamCtrl t,CampaignGoal goal,MKMOJNAJKJE f){
   var roads=new NearestReturnRoads(t.GetPosition(),f);
   bool Eligible(AFAGFHJONFJ c)=>c.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL&&ReturnGroupFits(t,CapacityRoom(c,AttackTeams(),t))&&!c.GKLIEHCHDLD()&&!IncomingHostile(c,f);
@@ -92,15 +116,16 @@ public sealed partial class StrategicSupport {
    var city=roads.City;var teams=AttackTeams();int room=CapacityRoom(city,teams,t),count=TeamTroops(t).Count;
    if(room<=0||!CampaignRoute(t,city,f,out int days)||!ReturnSafe(t,city,f,teams,days,false))continue;
    if(count<=room){if(DestinationFoodSafe(city,teams,t)&&CampaignMove(t,goal,city,true,"distributed-return-remainder",days)){Note($"return-search team={t.m_id} routesChecked={roads.RoutesChecked} deferredFarCities={roads.Pruned} basis=validated-native-road");yield break;}continue;}
-   long limit=Math.Max(2,(long)Math.Floor(t.GetCombatVal()*Math.Min(.9,room/(double)Math.Max(1,count))));
+   int unitLimit=room;
    Wo_DeployTeamCtrl child=null;
-   for(int attempt=0;attempt<8&&limit>=2;attempt++){
+   for(int attempt=0;attempt<8&&unitLimit>0;attempt++){
+    long limit=ReturnSplitPower(t,unitLimit);if(limit<2)break;
     child=SplitFieldArmy(t,limit);if(!child)break;
     var fresh=AttackTeams();int free=CapacityRoom(city,fresh,child),selected=TeamTroops(child).Count;
     string failure=selected>free?"unit-capacity":!DestinationFoodSafe(city,fresh,child)?"destination-food":!CampaignRoute(child,city,f,out days)?"child-route:"+reliefRouteFailure:child.GetFood()<(long)child.GetOneDayFood()*(days+2)?"journey-food":null;
     if(failure==null)break;
     Note($"return-split-rejected original={t.m_id} child={child.m_id} city={city.OJPECMNINNA} reason={failure} units={selected} room={free} position={child.GetPosition()} state={child.m_deployState} food={child.GetFood()} days={days}");
-    child.MergeToTeam(t);child=null;limit/=2;
+    child.MergeToTeam(t);child=null;unitLimit=Math.Min(free,selected-1);
     yield return "return-partition-retry";if(!SameCamp(t,goal))yield break;
    }
    if(!child)continue;

@@ -4,8 +4,8 @@ public sealed partial class StrategicSupport {
  static readonly Dictionary<IntPtr,Standoff> standoffs=new();
  sealed class FailedIntercept {public int Enemy;public string Faction;public Vector3 Position;public double Day;public int Power;}
  static readonly Dictionary<string,FailedIntercept> failedIntercepts=new();
- // Native interception may protect an ally or cut reinforcements to an allied
- // battle. Only checking the opponent's current region cancels those orders.
+ // An ally being present on the opposite side is not defensive purpose: that
+ // ally might be invading the enemy's city. Protect the city being attacked.
  static bool InterceptProtectedFaction(string own,string other){
   if(string.IsNullOrEmpty(other))return false;
   return own==other||(NEINKOOBJIH.COCMABJFOFH.TryGetValue(own??"",out var f)&&f!=null&&f.AENJACOFBJK!=null&&f.AENJACOFBJK.TryGetValue(other,out var relation)&&relation?.EBIOPDHEBOF==BHBNKONCOJD.Ally);
@@ -13,20 +13,24 @@ public sealed partial class StrategicSupport {
  static bool InterceptBattlePurpose(string own,Wo_DeployTeamCtrl enemy,NJHDEHLHENN battle){
   if(!CorridorWarAlive(battle))return false;
   int side=battle.EMMJBPMNFAK[0]==enemy.m_belongPower?0:battle.EMMJBPMNFAK[1]==enemy.m_belongPower?1:-1;
-  return side>=0&&InterceptProtectedFaction(own,battle.EMMJBPMNFAK[1-side]);
+  string defender=battle.IJGLCFJOOIK?.LMPMNLLGOEC?.LMMNKIOAGLC;
+  return side>=0&&!string.IsNullOrEmpty(defender)&&battle.EMMJBPMNFAK[1-side]==defender&&InterceptProtectedFaction(own,defender);
  }
  static bool InterceptRelevant(Wo_DeployTeamCtrl t,Wo_DeployTeamCtrl enemy,out string reason){
-  reason=null;
-  if(!MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(t.m_assembleCity??"",out var home)||home.LMPMNLLGOEC?.LMMNKIOAGLC!=t.m_belongPower)return true;
-  bool Own(AFAGFHJONFJ c)=>c?.LMPMNLLGOEC?.LMMNKIOAGLC==t.m_belongPower;
-  if(MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(enemy.m_targetCity??"",out var attacked)&&!enemy.m_isEnterCity&&InterceptProtectedFaction(t.m_belongPower,attacked?.LMPMNLLGOEC?.LMMNKIOAGLC))return true;
-  if(enemy.m_attackTarget&&InterceptProtectedFaction(t.m_belongPower,enemy.m_attackTarget.m_belongPower))return true;
-  if(InterceptBattlePurpose(t.m_belongPower,enemy,enemy.m_targetWarInfo)||InterceptBattlePurpose(t.m_belongPower,enemy,enemy.m_warInfo))return true;
-  var region=AOHIBKLOAEI.PNKKPMCJIGA(enemy.GetPosition());
-  // Unknown geometry is not enough evidence to cancel a native order.
-  if(region==null||Own(region)||region.Pointer==home.Pointer)return true;
-  if(home.FKMKGNPFLFP!=null)foreach(var c in home.FKMKGNPFLFP)if(c!=null&&c.Pointer==region.Pointer)return true;
-  reason="opponent-outside-source-frontier-without-friendly-target";return false;
+  return InterceptThreatPurpose(t?.m_belongPower,enemy,out reason);
+ }
+ static bool InterceptThreatPurpose(string own,Wo_DeployTeamCtrl enemy,out string reason){
+  reason="no-hostile-attack-on-own-or-ally";
+  if(!enemy||!enemy.gameObject.activeSelf||!NEINKOOBJIH.COCMABJFOFH.TryGetValue(own??"",out var owner)||!War(owner,enemy.m_belongPower))return false;
+  // Current battle intent supersedes stale city/army fields. A defending relief
+  // army is not an aggressor just because our ally is attacking its city.
+  var battle=enemy.m_warInfo??enemy.m_targetWarInfo;
+  if(battle!=null){bool hostile=InterceptBattlePurpose(own,enemy,battle);reason=hostile?"attack-protected-city-battle":"battle-is-not-an-attack-on-protected-city";return hostile;}
+  if(!enemy.m_isEnterCity&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(enemy.m_targetCity??"",out var attacked)&&InterceptProtectedFaction(own,attacked?.LMPMNLLGOEC?.LMMNKIOAGLC)){reason="attack-protected-city";return true;}
+  if(enemy.m_attackTarget&&enemy.m_attackTarget.gameObject.activeSelf&&InterceptProtectedFaction(own,enemy.m_attackTarget.m_belongPower)){reason="attack-protected-army";return true;}
+  // Proximity, unknown geometry and the previous source city are not evidence
+  // that a passing hostile army is attacking us or an ally.
+  return false;
  }
  static bool GuardFailedIntercept(Wo_DeployTeamCtrl t){
   if(!Ready()||!t||t.m_deployState!=AKOPKFPKJPP.Assemble||t.m_isPrivate||t.IncludePlayer()||!t.m_responseToPlayer||!t.m_responseTeam)return true;

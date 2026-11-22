@@ -28,6 +28,7 @@ public sealed partial class StrategicSupport
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"UpdateOneDay"),prefix:H(nameof(BeforeCampaignDay)),postfix:H(nameof(AfterCampaignDay)));
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"EnterCity"),prefix:H(nameof(GuardCampaignEntry)));
   h.Patch(AccessTools.Method(typeof(MKMOJNAJKJE),"BLOFJHJPIOH"),prefix:H(nameof(BeforeNativeTeamRefresh)),finalizer:H(nameof(AfterNativeTeamRefresh)));
+  h.Patch(AccessTools.Method(typeof(MKMOJNAJKJE),"IPDNICOBPDF"),prefix:H(nameof(BeforeNativeInterception)),finalizer:H(nameof(AfterNativeInterception)));
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"StartCamp"),postfix:H(nameof(AfterCampaignCamp)));
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"StartDeploy"),prefix:H(nameof(GuardAttackStart)));
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"StartDeploy"),postfix:H(nameof(RecordDeployResult)));
@@ -269,12 +270,14 @@ public sealed partial class StrategicSupport
  static void RecordDeployResult(Wo_DeployTeamCtrl __instance){
   try {RouteNewRelief(__instance);AfterInterceptDeploy(__instance);NotifyDefense(__instance);if(__instance!=null&&Gate("deploy-result:"+__instance.m_id,30))Note($"native-deploy-result team={__instance.m_id} faction={__instance.m_belongPower} source={__instance.m_assembleCity} target={__instance.m_targetCity} state={__instance.m_deployState} active={__instance.gameObject.activeSelf} tracked={attackOrders.ContainsKey(__instance.Pointer)} departureRequiresLeaveCity=true");}catch(Exception e){Error(e);}
  }
- static void RecordDismissal(Wo_DeployTeamCtrl __instance){
+ static bool RecordDismissal(Wo_DeployTeamCtrl __instance){
+  if(PreserveDeployedInterception(__instance))return false;
   try{ObserveBattleDispatchDismissal(__instance);}catch(Exception e){Error(e);}
   try{LogDismissCallsite(__instance);}catch(Exception e){Error(e);}
   if(__instance!=null)fieldReliefOrders.Remove(__instance.Pointer);
   if(__instance!=null){reliefLoans.Remove(__instance.Pointer);coverOrders.Remove(__instance.Pointer);defenseOrders.Remove(__instance.Pointer);NotifyDefense(__instance);capacityOrders.Remove(__instance.Pointer);campaignGoals.Remove(__instance.Pointer);}
   try {if(__instance!=null&&Gate("dismiss-observe:"+__instance.m_id,30))Note($"army-dismiss-observed team={__instance.m_id} faction={__instance.m_belongPower} source={__instance.m_assembleCity} target={__instance.m_targetCity} state={__instance.m_deployState} tracked={attackOrders.ContainsKey(__instance.Pointer)} private={__instance.m_isPrivate} enterCity={__instance.m_isEnterCity}");}catch(Exception e){Error(e);}
+  return true;
  }
  static void RecordAttackDeparture(Wo_DeployTeamCtrl __instance,AFAGFHJONFJ __0){
   try{

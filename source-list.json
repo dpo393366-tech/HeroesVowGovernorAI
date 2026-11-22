@@ -1,6 +1,7 @@
-﻿{
+{
   "StrategicSupport": [
     "StrategicSupport.cs",
+    "NativeInterception.cs",
     "ArrivalReports.cs",
     "StrategyPolicy.cs",
     "BattlePolicy.cs",
@@ -183,7 +184,9 @@
     "Corridor132Tests.cs",
     "Wall133Tests.cs",
     "Defense135Tests.cs",
-    "Intercept135Tests.cs"
+    "Intercept135Tests.cs",
+    "Return137Tests.cs",
+    "Intercept138Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

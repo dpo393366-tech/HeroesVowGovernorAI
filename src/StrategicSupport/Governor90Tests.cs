@@ -48,11 +48,13 @@ public static class Governor90Tests {
 }
 
 public partial class Wo_DeployTeamCtrl {
+ public static int SplitCalls137;
  public static bool DirtySplit95;
  static int splitId90=1000000;
  public Wo_DeployTeamCtrl GenDivideTeam(int budget){
+  SplitCalls137++;
   if(m_listHero.Count<2)return null;
-  var candidates=m_listHero.Where(h=>m_dicDeployArmy.ContainsKey(h.OJPECMNINNA)).OrderBy(h=>m_dicDeployArmy[h.OJPECMNINNA].Sum(a=>a.GNCKPEPJDGF())).ToList();
+  var sorted=new Il2CppSystem.Collections.Generic.List<CLAGKDECFID>();foreach(var h in m_listHero)sorted.Add(h);AOHIBKLOAEI.HCEFMHDIIAE(ref sorted,0,sorted.Count-1);var candidates=sorted.AsEnumerable().Reverse().ToList();
   var picked=new System.Collections.Generic.List<CLAGKDECFID>();int power=0;
   foreach(var h in candidates){int p=m_dicDeployArmy[h.OJPECMNINNA].Sum(a=>a.GNCKPEPJDGF());if(power+p>=budget*1.1)break;picked.Add(h);power+=p;}
   if(picked.Count==0||picked.Count>=m_listHero.Count)return null;
@@ -63,4 +65,14 @@ public partial class Wo_DeployTeamCtrl {
   return child;
  }
  public void MergeToTeam(Wo_DeployTeamCtrl target){foreach(var h in m_listHero)target.m_listHero.Add(h);foreach(var kv in m_dicDeployArmy)target.m_dicDeployArmy[kv.Key]=kv.Value;target.Food+=Food;target.Combat+=Combat;Food=0;m_listHero.Clear();m_dicDeployArmy.Clear();ICGAEMLACJG.HFJIECIBFKB.Remove(m_id);}
+}
+public partial class CLAGKDECFID {public int? SplitOrder137;}
+public partial class DHKINGPDKJJ {public int GNCKPEPJDGF(CLAGKDECFID hero,bool first)=>GNCKPEPJDGF();}
+public static partial class AOHIBKLOAEI {
+ public static void HCEFMHDIIAE(ref Il2CppSystem.Collections.Generic.List<CLAGKDECFID> heroes,int start,int end){
+  // Controllable native ordering boundary. Production uses the game's own
+  // hero sorter; it does not assume ordering by group combat power.
+  var ordered=heroes.OrderByDescending(h=>h.SplitOrder137??ICGAEMLACJG.HFJIECIBFKB.Values.Where(t=>t.m_listHero.Contains(h)&&t.m_dicDeployArmy.ContainsKey(h.OJPECMNINNA)).Select(t=>t.m_dicDeployArmy[h.OJPECMNINNA].Sum(a=>a.GNCKPEPJDGF())).FirstOrDefault()).ToArray();
+  heroes.Clear();foreach(var h in ordered)heroes.Add(h);
+ }
 }

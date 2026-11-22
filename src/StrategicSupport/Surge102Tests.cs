@@ -35,9 +35,9 @@ public static class Surge102Tests {
   typeof(Intercept90Tests).GetMethod("Setup",F).Invoke(null,null);
   var interceptor=Field<Wo_DeployTeamCtrl>(typeof(Intercept90Tests),"army");enemy=Field<Wo_DeployTeamCtrl>(typeof(Intercept90Tests),"enemy");
   var remote=new AFAGFHJONFJ{OJPECMNINNA="remote"};remote.LMPMNLLGOEC.LMMNKIOAGLC="enemy";AOHIBKLOAEI.RegionAt=p=>remote;
-  Call("RecoverHostileStandoff",interceptor);Check(!interceptor.m_responseToPlayer,"stale remote pursuit is released, not repeatedly marched into camp");
+  enemy.m_targetCity="";Call("RecoverHostileStandoff",interceptor);Check(!interceptor.m_responseToPlayer,"stale remote pursuit is released, not repeatedly marched into camp");
   typeof(Intercept90Tests).GetMethod("Setup",F).Invoke(null,null);interceptor=Field<Wo_DeployTeamCtrl>(typeof(Intercept90Tests),"army");enemy=Field<Wo_DeployTeamCtrl>(typeof(Intercept90Tests),"enemy");AOHIBKLOAEI.RegionAt=p=>remote;
-  interceptor.m_deployState=AKOPKFPKJPP.Assemble;Check(!(bool)Call("GuardFailedIntercept",interceptor)&&interceptor.Dismissed,"remote no-purpose interceptor is rejected before departure");
+  enemy.m_targetCity="";interceptor.m_deployState=AKOPKFPKJPP.Assemble;Check(!(bool)Call("GuardFailedIntercept",interceptor)&&interceptor.Dismissed,"remote no-purpose interceptor is rejected before departure");
   typeof(Intercept90Tests).GetMethod("Setup",F).Invoke(null,null);interceptor=Field<Wo_DeployTeamCtrl>(typeof(Intercept90Tests),"army");enemy=Field<Wo_DeployTeamCtrl>(typeof(Intercept90Tests),"enemy");AOHIBKLOAEI.RegionAt=p=>remote;enemy.m_targetCity=interceptor.m_assembleCity;
   object[] args={interceptor,enemy,null};Check((bool)Call("InterceptRelevant",args),"enemy actually attacking own city remains eligible across regions");
   AOHIBKLOAEI.RegionAt=null;Lifecycle();Call("ResetWork");Console.WriteLine("PASS Surge102 "+n+" production regressions; native movement mocked, live outcomes pending.");

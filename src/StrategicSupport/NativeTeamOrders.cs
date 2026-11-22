@@ -63,6 +63,7 @@ public sealed partial class StrategicSupport
         if(t.m_isPrivate||t.IncludePlayer())return true;
         RepairOrphanResponse(t);
         if(!t.m_responseToPlayer)return false;
+        if(t.m_responseTeam&&!InterceptRelevant(t,t.m_responseTeam,out _))return false;
         if(t.m_warInfo!=null||t.m_targetWarInfo!=null||t.m_isEnterCity||!string.IsNullOrEmpty(t.m_targetCity)||!string.IsNullOrEmpty(t.m_targetCamp)||t.m_mergeTarget||t.m_targetVillage!=null||t.m_targetPass!=null||defenseOrders.ContainsKey(t.Pointer)||coverOrders.ContainsKey(t.Pointer)||missions.ContainsKey(t.Pointer)||fieldReliefOrders.ContainsKey(t.Pointer))return false;
         // A valid moving interception already has this target. Reissuing it is
         // not progress and can clear unrelated state established after dispatch.

@@ -7,7 +7,7 @@ public static class Intercept90Tests {
  static void Setup(){
   typeof(Campaign81Tests).GetMethod("Setup",F).Invoke(null,null);Call("ResetWork");Map("standoffs").Clear();Map("failedIntercepts").Clear();Map("decisionStamps").Clear();
   army=(Wo_DeployTeamCtrl)typeof(Campaign81Tests).GetField("t",F).GetValue(null);army.m_targetCity="";army.gameObject.activeSelf=true;army.m_responseToPlayer=true;
-  enemy=new(){m_id=401,m_belongPower="enemy",m_deployState=AKOPKFPKJPP.Expedition,Position=new(70),Combat=9000};enemy.gameObject.activeSelf=true;enemy.m_listMovePos.Add(new(90));army.m_responseTeam=enemy;ICGAEMLACJG.HFJIECIBFKB[401]=enemy;AOHIBKLOAEI.RegionAt=null;
+  enemy=new(){m_id=401,m_belongPower="enemy",m_targetCity=army.m_assembleCity,m_deployState=AKOPKFPKJPP.Expedition,Position=new(70),Combat=9000};enemy.gameObject.activeSelf=true;enemy.m_listMovePos.Add(new(90));army.m_responseTeam=enemy;ICGAEMLACJG.HFJIECIBFKB[401]=enemy;AOHIBKLOAEI.RegionAt=null;
  }
  public static void Run(){
   Setup();Call("RecoverHostileStandoff",army);Check(army.m_attackTarget==enemy&&army.m_deployState==AKOPKFPKJPP.Expedition&&army.m_listMovePos.Count>0,"native empty-target Camp immediately obtains a real attack and validated path against moving opponent");Check(!army.Dismissed&&army.Position.x==50,"existing force is neither teleported nor dismissed");
