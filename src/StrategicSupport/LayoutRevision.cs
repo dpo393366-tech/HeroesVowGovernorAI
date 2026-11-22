@@ -7,6 +7,7 @@ public sealed partial class StrategicSupport
     sealed class LayoutRevision
     {
         public string Geometry,Catalog,Goals,Buildings,Progress;
+        public Dictionary<string,string> Districts=new();
         public string Change(LayoutRevision next)=>StructureChange(next)??(Progress!=next.Progress?"construction-or-goal-progress":null);
         public string StructureChange(LayoutRevision next)=>next==null?"missing-state":Geometry!=next.Geometry?"city-expansion-or-plots":
             Catalog!=next.Catalog?"research-or-building-caps":Goals!=next.Goals?"city-goals":Buildings!=next.Buildings?"buildings-changed":null;
@@ -16,9 +17,10 @@ public sealed partial class StrategicSupport
         // Compare the inputs, not wall time. A regenerated parcel object alone
         // is not a map expansion; use the underlying cells and their geometry.
         var geometry=new List<string>{"scale="+(int)c.MPGFDBPEHBO(true),"relax-adjacency="+(relaxBuildingAdjacency?.Value==true)};
-        var buildings=new List<string>();var catalog=new List<string>();var goals=new List<string>();var progress=new List<string>();
+        var buildings=new List<string>();var catalog=new List<string>();var goals=new List<string>();var progress=new List<string>();var districtStates=new Dictionary<string,string>();
         if(c.FGBLEMGGOPO!=null)foreach(var d in c.FGBLEMGGOPO){
             if(d==null||d.KFCOLLDEJNF!=HNDFFIEJNHI.Public)continue;
+            int geometryStart=geometry.Count,buildingStart=buildings.Count;
             geometry.Add($"district={d.OJPECMNINNA}/{d.Pointer}/{d.HFBAJIGHOAF}");
             var cells=new Dictionary<long,FEEDONDCELP>();
             if(d.FAFNFFJAFKH!=null)foreach(var row in d.FAFNFFJAFKH)if(row!=null)foreach(var q in row)if(q!=null)cells[q.Pointer.ToInt64()]=q;
@@ -29,6 +31,7 @@ public sealed partial class StrategicSupport
                 buildings.Add($"{d.OJPECMNINNA}/{x.OJPECMNINNA}/{x.GEKKLMPLDHJ.OJPECMNINNA}");
                 progress.Add($"building={x.OJPECMNINNA}/{Completed(x)}");
             }
+            districtStates[d.OJPECMNINNA]=string.Join("|",geometry.Skip(geometryStart).Concat(buildings.Skip(buildingStart)).OrderBy(x=>x,StringComparer.Ordinal));
         }
         int scale=(int)c.MPGFDBPEHBO(true);
         if(AEHAGJAKNEK.ACIGFKMDOKE!=null)foreach(var kv in AEHAGJAKNEK.ACIGFKMDOKE){var b=kv.Value;
@@ -42,6 +45,6 @@ public sealed partial class StrategicSupport
             progress.Add($"goal={g.PIHDGCBCMCP}/{g.NHIPAJDALBA(c)}");
         }
         string Join(List<string> x){x.Sort(StringComparer.Ordinal);return string.Join("|",x);}
-        return new(){Geometry=Join(geometry),Catalog=Join(catalog),Goals=Join(goals),Buildings=Join(buildings),Progress=Join(progress)};
+        return new(){Geometry=Join(geometry),Catalog=Join(catalog),Goals=Join(goals),Buildings=Join(buildings),Progress=Join(progress),Districts=districtStates};
     }
 }

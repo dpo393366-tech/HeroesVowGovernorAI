@@ -2,12 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 public sealed partial class StrategicSupport {
- static T TimedAI<T>(MKMOJNAJKJE f,string phase,Func<T> action){
-  var timer=Stopwatch.StartNew();try{return action();}finally{
-   RecordPhaseCost("native/"+phase,timer.Elapsed.TotalMilliseconds);
-   if(timer.Elapsed.TotalMilliseconds>=8&&Gate("phase:"+f.IBGCLCAIBOL+":"+phase,30))Note($"ai-phase faction={f.IBGCLCAIBOL} phase={phase} ms={timer.Elapsed.TotalMilliseconds:F2}");
-  }
- }
+ // Legacy call sites keep their action semantics; profiling is removed.
+ static T TimedAI<T>(MKMOJNAJKJE f,string phase,Func<T> action)=>action();
  static double ScoreStrategy(JFLCKHMFGPJ s,StatecraftPolicy.Needs needs,out string reason){
   reason=null;double benefit=0,loss=0;
   if(s.MDPGDMKHDAG==null||s.MDPGDMKHDAG.Count==0){reason="missing-effects";return 0;}

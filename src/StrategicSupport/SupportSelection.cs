@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 public sealed partial class StrategicSupport
@@ -30,9 +30,9 @@ public sealed partial class StrategicSupport
         List<Wo_DeployTeamCtrl> teams,HashSet<IntPtr> reserved)
     {
         supportGenerationFailure=null;supportGenerationCreated=false;
-        var previous=transactionWaves;transactionWaves=new();var started=System.Diagnostics.Stopwatch.GetTimestamp();
+        var previous=transactionWaves;transactionWaves=new();
         try{return GenerateSupportCore(city,requested,teams,reserved);}
-        finally{transactionWaves=previous;RecordPhaseCost("native/support-selection",(System.Diagnostics.Stopwatch.GetTimestamp()-started)*1000d/System.Diagnostics.Stopwatch.Frequency);}
+        finally{transactionWaves=previous;}
     }
     static Wo_DeployTeamCtrl GenerateSupportCore(AFAGFHJONFJ city,int requested,
         List<Wo_DeployTeamCtrl> teams,HashSet<IntPtr> reserved)

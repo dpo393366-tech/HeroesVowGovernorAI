@@ -5,7 +5,7 @@
   "files": [
     {
       "path": "BepInEx/plugins/StrategicSupport/StrategicSupport.dll",
-      "sha256": "0EFCF9B4927BD98BDF19F43D0B4F365F1CDCB8447698E417EB121716B6634E87"
+      "sha256": "BF3FD487C98B89385CD9CC55538A37F865A5D85DD21BF3A403564D6FCDDE3C23"
     },
     {
       "path": "BepInEx/plugins/TreasuryAwards/TreasuryAwards.dll",

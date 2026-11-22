@@ -182,6 +182,7 @@ public sealed partial class StrategicSupport {
    if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation||!CurrentFaction(f)||c.LMPMNLLGOEC?.LMMNKIOAGLC!=f.IBGCLCAIBOL||Vector3.Distance(destination,w.GBHGENNMJCK)>.01f)yield break;
   }
   if(RoadPolicyStamp(f)!=stamp)yield break;
+  foreach(var phase in AvoidBattleCorridors(c.BMBMKPGEHBH,w,f,route)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation||RoadPolicyStamp(f)!=stamp)yield break;}
   SaveBattleRoad(c,w,f,route,stamp);
   float speed=Wo_DeployTeamCtrl.GetMoveSpeed(f.IBGCLCAIBOL,false);bool ok=route.Success&&speed>0;double eta=ok?route.Length/speed:double.PositiveInfinity;reliefRouteFailure=route.Failure;
   if(Gate("battle-route-result:"+key,15))Note($"battle-route-result source={c.OJPECMNINNA} faction={f.IBGCLCAIBOL} war={w.HIENOINGBCN} destination={w.IJGLCFJOOIK?.OJPECMNINNA} battlefield={battlefield} accepted={ok} eta={(ok?eta+mobilizeSeconds.Value:double.PositiveInfinity):F1} reason={(ok?"validated-complete-path":reliefRouteFailure)}");

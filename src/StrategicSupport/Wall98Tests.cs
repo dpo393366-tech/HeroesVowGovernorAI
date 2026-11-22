@@ -10,7 +10,7 @@ public static class Wall98Tests {
   c.FGBLEMGGOPO.Clear();var d=new JNHOOCJJPJO{OJPECMNINNA="wall",AJJCCPCJPFC=c,PLIFMOIBPME=true,FAFNFFJAFKH=new()};c.FGBLEMGGOPO.Add(d);
   var row=new Il2CppSystem.Collections.Generic.List<FEEDONDCELP>();d.FAFNFFJAFKH.Add(row);
   var tower=new PABIPDOFBFG{OJPECMNINNA="JZ40009",HFBAJIGHOAF=MHCEFEODENB.Wall,MLAJLJKFGBD=1,PNPLBNAFMCM=1,NPCHPDNFAME=1000,CNCPIILGDEF=0};AEHAGJAKNEK.ACIGFKMDOKE[tower.OJPECMNINNA]=tower;
-  for(int j=0;j<15;j++){var tile=new FEEDONDCELP{GMIKIMACDBC=d,HFBAJIGHOAF=1,PMGDGAAICCG=j%4+1,PAHKDHJPFKD=j};row.Add(tile);if(j<12)d.FPFEFLILLFN(new OGABIJECHFG{OJPECMNINNA=j+1,GEKKLMPLDHJ=tower,Cells=new[]{tile}},false);}
+  for(int j=0;j<15;j++){var tile=new FEEDONDCELP{GMIKIMACDBC=d,HFBAJIGHOAF=1,PMGDGAAICCG=j%4+1,PAHKDHJPFKD=j,BJHLIMBCBNN=new UnityEngine.Vector3(j*23-160,8.7f,205)};row.Add(tile);if(j<12)d.FPFEFLILLFN(new OGABIJECHFG{OJPECMNINNA=j+1,GEKKLMPLDHJ=tower,Cells=new[]{tile}},false);}
   d.BBJBFAFMCCB(false);Check(d.HGNFEMJOPPB.Count==0,"native wall generator returns without ordinary parcels");
   var plans=((IEnumerable)Call("RebuildPlans",c,d,tower,true)).Cast<object>().Where(x=>x!=null).ToList();Check(plans.Count==3,"all three empty sockets found despite twelve existing towers and no borders");
   var original=row.Take(12).Select(x=>x.FCOJFBEHMAG).ToArray();int cash=f.DNOGPFHMOMO+c.LMPMNLLGOEC.DNOGPFHMOMO;

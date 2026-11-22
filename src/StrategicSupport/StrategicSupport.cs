@@ -42,9 +42,9 @@ public sealed partial class StrategicSupport:BasePlugin
             h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"OBIOEOJAHMM"),prefix:H(nameof(BeginStaff)),finalizer:H(nameof(EndStaff)));
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"OBIOEOJAHMM"),prefix:H(nameof(BeforeStaff)));
             h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"JFOOAMEIMDO"),prefix:H(nameof(BeforeRecruit)));
-            HookRecruitmentQuality(h); HookOfficerSelection(h); HookWorldTiming(h); StartPerformance(h);
+            HookRecruitmentQuality(h); HookOfficerSelection(h); StartWorkScheduler();
         } catch(Exception e) {Note("STARTUP FAILED "+e);h.UnpatchSelf();throw;}
-        Note("Strategic Support 1.5.44 loaded; build=capacity-evacuation-r124; family-protection-r121 retained; construction parcel and layout rejection diagnostics; per-source battle cancellation memory, exact-road lazy return search, stationary march watchdog; native delegated-city eligibility, predictive food supply and frontier reserves.");
+        Note("Strategic Support 1.5.44 loaded; build=wall-construction-r133; native wall socket registration and legacy zero-progress recovery; ready construction has a separate bounded execution share; corridor-aware support and bounded breakthrough planning; editor compatibility r125 retained; independent cached construction, background layout, research, maintenance and goal redevelopment; family protection, native construction time, costs, goal placement and civic safety retained.");
     }
     static void Error(Exception e){if(Environment.TickCount64<nextError)return;nextError=Environment.TickCount64+30000;Note("ERROR "+e);log.LogWarning(e.ToString());}
     static bool Ready()

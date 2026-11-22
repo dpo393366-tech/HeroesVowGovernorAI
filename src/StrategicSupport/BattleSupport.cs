@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
@@ -21,7 +21,7 @@ public sealed partial class StrategicSupport
         public Wo_DeployTeamCtrl Team;public NJHDEHLHENN War;public int Id,Side;
         public string Name,Faction,Source;public double ReadyAt;
         public bool Direct,Departed;public string ProbeSignature;public double ProbeEta;public long ProbeFood;
-        public long DepartureTick;public double DepartureDay;public Vector3 DeparturePosition;
+        public RoutePlan FailedCorridor;public long FailedCorridorRevision;public string FailedCorridorPolicy;public Vector3 FailedCorridorStart;public List<Vector3> PlannedRoad;public long DepartureTick;public double DepartureDay;public Vector3 DeparturePosition;
     }
     static readonly Dictionary<IntPtr,BattleState> battles=new();
     static readonly Dictionary<IntPtr,Mission> missions=new();
@@ -50,11 +50,11 @@ public sealed partial class StrategicSupport
     }
     static bool Same(NJHDEHLHENN a,NJHDEHLHENN b)=>a!=null&&b!=null&&a.Pointer==b.Pointer;
     static bool IsDirect(NJHDEHLHENN w)=>Same(Wa_Controller.m_warInfo,w)&&!Wa_Controller.m_isQuiting;
-    static void ResetBattleState(){ResetSupply();rejectedBattleDispatches.Clear();emergencyBudgets.Clear();battles.Clear();missions.Clear();directWar=IntPtr.Zero;battleClock=0;nextMissionPoll=0;}
+    static void ResetBattleState(){ResetBattleCorridors();ResetSupply();rejectedBattleDispatches.Clear();emergencyBudgets.Clear();battles.Clear();missions.Clear();directWar=IntPtr.Zero;battleClock=0;nextMissionPoll=0;}
     static void ForgetBattle(NJHDEHLHENN __instance)
     {
         if(__instance==null)return;
-        battles.Remove(__instance.Pointer);ForgetSupply(__instance);ForgetBattleDispatchRetries(__instance);
+        ForgetCorridor(__instance);battles.Remove(__instance.Pointer);ForgetSupply(__instance);ForgetBattleDispatchRetries(__instance);
         // Hand any still-travelling army back to native destination/lifecycle handling.
         removeMissions.Clear();foreach(var p in missions)if(Same(p.Value.War,__instance))removeMissions.Add(p.Key);
         foreach(var key in removeMissions)missions.Remove(key);
@@ -116,7 +116,7 @@ public sealed partial class StrategicSupport
         &&m.War!=null&&m.War.HIENOINGBCN==m.Name&&m.Team.m_warInfo==null&&Same(m.Team.m_targetWarInfo,m.War);
     static void CleanMissions()
     {
-        removeMissions.Clear();foreach(var p in missions)if(!ValidMission(p.Value))removeMissions.Add(p.Key);
+        removeMissions.Clear();foreach(var p in missions)if(!ValidMission(p.Value)){ObserveCorridorOutcome(p.Value);removeMissions.Add(p.Key);}
         foreach(var p in removeMissions)missions.Remove(p);
     }
     static int Soldiers(NJHDEHLHENN w,int side,bool direct)
@@ -144,6 +144,7 @@ public sealed partial class StrategicSupport
             var teams=new List<Wo_DeployTeamCtrl>();var reserved=new HashSet<IntPtr>();
             if(ICGAEMLACJG.HFJIECIBFKB==null)return;
             foreach(var kv in ICGAEMLACJG.HFJIECIBFKB)if(kv.Value){teams.Add(kv.Value);Reserve(kv.Value,reserved);}
+            RefreshBattleCorridors(teams);
             // Register already marching native reinforcements before the
             // per-side decision gate: the gate must not delay their movement.
             if(direct)foreach(var t in teams)if(t.m_warInfo==null&&Same(t.m_targetWarInfo,w)&&!t.m_isPrivate&&t.m_deployState==AKOPKFPKJPP.Expedition&&!missions.ContainsKey(t.Pointer)){
@@ -169,7 +170,7 @@ public sealed partial class StrategicSupport
                 int incoming=0,pending=0,totalPending=0;
                 var friendlyWaves=new List<ReinforcementTimeline.Wave>();
                 var enemyWaves=new List<ReinforcementTimeline.Wave>();
-                foreach(var t in teams)if(t.m_belongPower==faction&&t.m_warInfo==null&&Same(t.m_targetWarInfo,w)){
+                foreach(var t in teams)if(t.m_belongPower==faction&&t.m_warInfo==null&&Same(t.m_targetWarInfo,w)&&CorridorArrivalClear(t,w,f)){
                     // Already dispatched native support must also keep travelling
                     // while direct command pauses the world; its destination is untouched.
                     totalPending++;double eta=Travel(t,w);
@@ -223,6 +224,8 @@ public sealed partial class StrategicSupport
             if(t.m_warInfo?.IJGLCFJOOIK?.OJPECMNINNA==source.OJPECMNINNA)return null;}
         var troops=source.LMPMNLLGOEC.KJPPGIOCDID;if(troops==null)return null;
         long total=0;foreach(var a in troops)if(a!=null)total+=Math.Max(0,a.FGHFOLKBHDL);
+        RefreshBattleCorridors(teams);
+        if(!PreparedBattlePath(source.BMBMKPGEHBH,w,owner,false,out var corridorPoints,out double corridorLength))return null;
         Wo_DeployTeamCtrl team=null;
         string signature=BattleDispatchSignature(source,w,owner,teams);long sourceFood=source.LMPMNLLGOEC.OEGNGFBCHFL;
         if(!BattleDispatchReady(source,w,side,direct,signature,arrivalUseful))return null;
@@ -238,13 +241,13 @@ public sealed partial class StrategicSupport
                 team=GenerateEmergencyRelief(source,w,requested,estimate,teams,reserved);
             }finally{battleOriginalReserveExclusions=previousExclusions;}
             if(!team){if(supportGenerationCreated)RejectBattleDispatch(source,w,side,direct,signature,"assembly:"+(supportGenerationFailure??"unknown"),estimate,-1,sourceFood);return null;}
-            if(!RouteSeconds(source.BMBMKPGEHBH,w.GBHGENNMJCK,owner,team.GetMoveSpeed(),out double route,BattleTransitRegion(w,owner))){RejectBattleDispatch(source,w,side,direct,signature,"assembled-route-unavailable",double.PositiveInfinity,team.m_id,sourceFood);InvalidateBattleRoad(source,w,owner);DismissSupport(team);return null;}
-            double actual=route+Math.Max(mobilizeSeconds.Value,Math.Max(0,team.GetLeftAssembleDay())*AOHIBKLOAEI.NIOKFCDLGFK());
+            if(team.GetMoveSpeed()<=0||!ValidateBattleDeparture(source,w,owner,out corridorPoints,out corridorLength)){RejectBattleDispatch(source,w,side,direct,signature,"assembled-route-unavailable",double.PositiveInfinity,team.m_id,sourceFood);InvalidateBattleRoad(source,w,owner);DismissSupport(team);return null;}
+            double actual=corridorLength/team.GetMoveSpeed()+Math.Max(mobilizeSeconds.Value,Math.Max(0,team.GetLeftAssembleDay())*AOHIBKLOAEI.NIOKFCDLGFK());
             string rejected=actual>maxTravelSeconds.Value?"arrival-too-late":!arrivalUseful(actual)?"arrival-not-useful":!RelayFoodSafe(team,source,actual)?"journey-food":null;
             if(rejected!=null){RejectBattleDispatch(source,w,side,direct,signature,rejected,actual,team.m_id,sourceFood);if(rejected=="arrival-too-late")InvalidateBattleRoad(source,w,owner);DismissSupport(team);return null;}
             team.m_targetCity="";team.m_targetWarInfo=w;team.m_isEnterCity=false;
             int dispatchedId=team.m_id;
-            missions[team.Pointer]=new Mission{Team=team,Id=team.m_id,War=w,Name=w.HIENOINGBCN,Side=side,Faction=owner.IBGCLCAIBOL,Source=source.OJPECMNINNA,Direct=direct,ReadyAt=battleClock+mobilizeSeconds.Value,ProbeSignature=signature,ProbeEta=actual,ProbeFood=sourceFood};
+            missions[team.Pointer]=new Mission{Team=team,Id=team.m_id,War=w,Name=w.HIENOINGBCN,Side=side,Faction=owner.IBGCLCAIBOL,Source=source.OJPECMNINNA,Direct=direct,ReadyAt=battleClock+mobilizeSeconds.Value,ProbeSignature=signature,ProbeEta=actual,ProbeFood=sourceFood,PlannedRoad=new(corridorPoints)};
             
             if(!team.gameObject.activeSelf)team.gameObject.SetActive(true);
             // A disabled world hierarchy does not receive OnEnable in direct command.

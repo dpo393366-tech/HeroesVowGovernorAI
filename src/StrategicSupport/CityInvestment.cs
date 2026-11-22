@@ -28,7 +28,7 @@ public sealed partial class StrategicSupport
         research=Config.Bind("Investment","Research",true,"Reconsider native research when an AI city updates; retain prerequisites, research points and idle researcher requirements.");
         zoning=Config.Bind("Investment","SpecializeDistricts",true,"Prefer district synergies while allowing mixed commerce/agriculture for goals, civic balance and higher city output.");
         relaxBuildingAdjacency=Config.Bind("Investment","RelaxBuildingAdjacency",true,"Allow building sites without required road adjacency. Preserve footprint, terrain/walls, research, resource costs, private/public ownership and building caps.");
-        buildsPerCity=Config.Bind("Investment","BuildingsPerCityUpdate",2,new ConfigDescription("Maximum extra buildings per native city update; work is bounded rather than scanned every frame.",new AcceptableValueRange<int>(1,8)));
+        buildsPerCity=Config.Bind("Investment","BuildingsPerCityUpdate",8,new ConfigDescription("Maximum extra buildings per managed city visit. Purchases yield separately within the shared frame budget; native construction time, costs and placement rules remain intact.",new AcceptableValueRange<int>(1,8)));
         cityCashReserve=Config.Bind("Investment","CityCashReserve",10000,new ConfigDescription("Minimum local cash retained in addition to current recruitment needs.",new AcceptableValueRange<int>(0,10000000)));
         investmentTreasuryReserve=Config.Bind("Investment","TreasuryReserve",10000,new ConfigDescription("Treasury emergency cash retained for investment/research. Recruitment has its own reserve; all surplus above this is available for productive investment.",new AcceptableValueRange<int>(0,10000000)));
     }
@@ -163,7 +163,8 @@ public sealed partial class StrategicSupport
     static bool BuildBest(AFAGFHJONFJ c,MKMOJNAJKJE f){
         bool result=false;foreach(bool committed in BuildSteps(c,f))result|=committed;return result;
     }
-    static IEnumerable<bool> BuildSteps(AFAGFHJONFJ c,MKMOJNAJKJE f)
+    static IEnumerable<bool> BuildSteps(AFAGFHJONFJ c,MKMOJNAJKJE f)=>BuildScanSteps(c,f,false);
+    static IEnumerable<bool> BuildScanSteps(AFAGFHJONFJ c,MKMOJNAJKJE f,bool planningOnly)
     {
         string owner=c.LMPMNLLGOEC.LMMNKIOAGLC,governor=c.LMPMNLLGOEC.IPJHOOJBCKI;
         var worldAtStart=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;
@@ -232,29 +233,74 @@ public sealed partial class StrategicSupport
                 }
             }
         }
-        LayoutChoice choice=null;LayoutIntent intent=null;
-        if(initialRevision.StructureChange(ReadLayoutRevision(c,f)) is string changed){Note($"layout-scan-discard city={c.OJPECMNINNA} reason={changed}");yield break;}
-        foreach(bool step in ChooseLayoutSteps(c,f,goals,choices,(x,y)=>{choice=x;intent=y;})){yield return false;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=worldAtStart||!CurrentCity(c,f,governor))yield break;}
+        LayoutChoice choice=null;LayoutIntent intent=null;string interrupted=null;
+        var scannedRevision=ReadLayoutRevision(c,f);
+        if(initialRevision.StructureChange(scannedRevision) is string changed){
+            if(!planningOnly||changed!="buildings-changed"){Note($"layout-scan-discard city={c.OJPECMNINNA} reason={changed}");yield break;}
+            // Upgrading an existing building does not require enumerating every
+            // empty rectangle again. Retain footprints, rebuild current effects,
+            // limits and goal priorities, and reject parcels occupied meanwhile.
+            var refreshed=new List<LayoutChoice>();
+            foreach(var step in RefreshScannedChoices(c,f,choices,refreshed)){yield return false;if(!CurrentCity(c,f,governor))yield break;}
+            if(scannedRevision.StructureChange(ReadLayoutRevision(c,f)) is string again){Note($"layout-scan-discard city={c.OJPECMNINNA} reason=refresh-"+again);yield break;}
+            Note($"layout-scan-refreshed city={c.OJPECMNINNA} reason=buildings-changed before={choices.Count} after={refreshed.Count} geometryReused=true");
+            choices=refreshed;initialRevision=scannedRevision;goals=ReadGoals(c);AddBarracksGoals(c,f,goals);
+        }
+        foreach(bool step in ChooseLayoutSteps(c,f,goals,choices,(x,y)=>{choice=x;intent=y;},planningOnly,reason=>interrupted=reason)){yield return false;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=worldAtStart||!CurrentCity(c,f,governor))yield break;}
+        if(interrupted!=null){InvestmentAudit(c,$"layout-wait reason={interrupted} candidates={choices.Count} retryRequired=true");yield break;}
         if(choice!=null){best=choice.Building;spot=choice.Place;block=choice.District;priorityBest=choice.Action.Priority;}
-        if(best==null||spot==null){var reasons=new List<string>();foreach(var pair in blocked)reasons.Add(pair.Key+"="+pair.Value);InvestmentAudit(c,$"no-build-candidate allowed={candidates} publicDistricts={districts.Count} legalChoices={choices.Count} parcelProbes={parcelProbes} sizeRejected={sizeRejected} nativeRejected={nativeRejected} nativeBuildScope={nativeBuildScope} blocked=[{string.Join(",",reasons)}]");yield break;}
-        if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=worldAtStart||c.LMPMNLLGOEC.LMMNKIOAGLC!=owner||c.LMPMNLLGOEC.IPJHOOJBCKI!=governor)yield break;
+        if(best==null||spot==null){
+            if(planningOnly&&initialRevision.StructureChange(ReadLayoutRevision(c,f))==null)layoutIntents[c.OJPECMNINNA]=EmptyLayout(c,f);
+            var reasons=new List<string>();foreach(var pair in blocked)reasons.Add(pair.Key+"="+pair.Value);InvestmentAudit(c,$"no-build-candidate allowed={candidates} publicDistricts={districts.Count} legalChoices={choices.Count} parcelProbes={parcelProbes} sizeRejected={sizeRejected} nativeRejected={nativeRejected} nativeBuildScope={nativeBuildScope} blocked=[{string.Join(",",reasons)}]");yield break;
+        }
+        if(planningOnly){layoutIntents[c.OJPECMNINNA]=intent;yield break;}
+        if(PurchaseLayout(c,f,choice,intent,initialRevision))yield return true;
+    }
+    static IEnumerable<bool> RefreshScannedChoices(AFAGFHJONFJ c,MKMOJNAJKJE f,List<LayoutChoice> previous,List<LayoutChoice> output){
+        var goals=ReadGoals(c);var actual=new HashSet<string>(goals.Buildings.Keys);AddBarracksGoals(c,f,goals);
+        var missing=BarracksMissing(c,f);var civic=ReadCivicFlow(c);bool hungry=FoodEmergency(c);
+        var districts=new Dictionary<IntPtr,DistrictPlan>();
+        foreach(var x in previous){
+            yield return false;var d=x.District;var b=x.Building;var p=x.Place;
+            if(!CurrentPlot(c,d,p,x.Action.Tiles)||BuildBlock(c,f,b,LocalReserve(c),true)!=null||!p.BFPBNAKIKEO(b))continue;
+            if(!districts.TryGetValue(d.Pointer,out var plan)){
+                var effects=DistrictEffects(d);
+                plan=new(){District=d,Zone=zoning.Value?DistrictZone(d):0,Commerce=d.IMMLKOLPPHF(),Agriculture=d.KMDCHCBIAIG(),Effects=effects,Output=BuildingEffectsPolicy.Evaluate(effects)};
+                if(d.AIMLPNBOIIF!=null)foreach(var instance in d.AIMLPNBOIIF){var def=instance?.GEKKLMPLDHJ;if(def==null)continue;
+                    plan.Money+=Math.Max(0,def.CNCPIILGDEF);plan.Food+=Math.Max(0,def.AJJJJNDNNME);plan.MoneyBonus+=def.FIPONBEGNJO;plan.FoodBonus+=def.NIKFGJLNNCA;
+                }districts[d.Pointer]=plan;
+            }
+            double goal=GoalBenefit(goals,plan,b);int defense=DefenseShortfall(c,f,b);
+            bool feeds=b.AJJJJNDNNME>0||b.NIKFGJLNNCA>0,required=goals.Buildings.ContainsKey(b.OJPECMNINNA);
+            int priority=actual.Contains(b.OJPECMNINNA)?10:((civic.Security<=0&&b.HKBPGJLMFIG>0)||(civic.Popular<=0&&b.DPFIFIOKHEI>0))?9:missing.ContainsKey(b.OJPECMNINNA)?8:hungry&&feeds?7:required?3:defense>0?3:goal>0?2:1;
+            double benefit=defense*500+goal*20+Math.Max(0,b.IKELHGAHBID)*10;
+            var projected=new List<BuildingEffectsPolicy.Building>(plan.Effects){BuildingProfile(b,d.OJPECMNINNA,PlotCells(p))};
+            double structural=BuildingEffectsPolicy.Evaluate(projected).Value-plan.Output.Value;
+            double score=InvestmentPolicy.Score(priority,benefit+structural,b.NPCHPDNFAME,b.MLAJLJKFGBD*b.PNPLBNAFMCM);
+            if(double.IsFinite(score)&&double.IsFinite(structural))output.Add(MakeLayoutChoice(c,plan,b,p,priority,benefit-goal*20,score));
+        }
+    }
+    static bool PurchaseLayout(AFAGFHJONFJ c,MKMOJNAJKJE f,LayoutChoice choice,LayoutIntent intent,LayoutRevision initialRevision){
+        if(choice==null||!CurrentCity(c,f,c.LMPMNLLGOEC.IPJHOOJBCKI))return false;
+        string owner=f.IBGCLCAIBOL,governor=c.LMPMNLLGOEC.IPJHOOJBCKI;var worldAtStart=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;
+        var best=choice.Building;var spot=choice.Place;var block=choice.District;int priorityBest=choice.Action.Priority,reserve;
+        if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=worldAtStart||c.LMPMNLLGOEC.LMMNKIOAGLC!=owner||c.LMPMNLLGOEC.IPJHOOJBCKI!=governor)return false;
         reserve=LocalReserve(c);
         string commitBlock=BuildBlock(c,f,best,reserve);
         if(commitBlock==null&&initialRevision.StructureChange(ReadLayoutRevision(c,f)) is string revisionChange)commitBlock="plan-inputs-changed:"+revisionChange;
-        var stillMissing=BarracksMissing(c,f);
         if(commitBlock==null)commitBlock=CivicBuildBlock(c,best);
         if(commitBlock==null&&!CurrentPlot(c,block,spot,choice.Action.Tiles))commitBlock="parcel-changed-or-occupied";
         if(commitBlock==null&&!spot.BFPBNAKIKEO(best))commitBlock="native-parcel-rejected";
-        if(commitBlock!=null){layoutIntents.Remove(c.OJPECMNINNA);InvestmentAudit(c,$"build-commit-blocked building={best.OJPECMNINNA} district={block.OJPECMNINNA} reason={commitBlock} cost={best.NPCHPDNFAME} treasury={f.DNOGPFHMOMO} cityCash={c.LMPMNLLGOEC.DNOGPFHMOMO} reserve={reserve}");yield break;}
+        if(commitBlock!=null){layoutIntents.Remove(c.OJPECMNINNA);InvestmentAudit(c,$"build-commit-blocked building={best.OJPECMNINNA} district={block.OJPECMNINNA} reason={commitBlock} cost={best.NPCHPDNFAME} treasury={f.DNOGPFHMOMO} cityCash={c.LMPMNLLGOEC.DNOGPFHMOMO} reserve={reserve}");return false;}
         int transfer=InvestmentPolicy.TransferForPurchase(f.DNOGPFHMOMO,c.LMPMNLLGOEC.DNOGPFHMOMO,best.NPCHPDNFAME,InvestmentReserve(f),reserve);
         var row=c.LMPMNLLGOEC;int treasury=f.DNOGPFHMOMO,cash=row.DNOGPFHMOMO,tech=f.IIBKLLKPNEH,strategy=f.PEGLDBENJMF;
         int count=block.AIMLPNBOIIF?.Count??0;string id=best.OJPECMNINNA,blockId=block.OJPECMNINNA;
-        using var materials=PayMaterials(f,best);if(materials==null)yield break;
+        using var materials=PayMaterials(f,best);if(materials==null)return false;
         bool committed=false;
         try{
             f.DNOGPFHMOMO=treasury-transfer;row.DNOGPFHMOMO=cash+transfer-best.NPCHPDNFAME;
             f.IIBKLLKPNEH=tech-Math.Max(0,best.ODKKMLDAPJL);f.PEGLDBENJMF=strategy-Math.Max(0,best.ADGOBJJMEAO);
-            block.PJNMLNMLAKA(best,spot);
+            RegisterConstruction(c,block,best,spot);
             committed=(block.AIMLPNBOIIF?.Count??0)>count;
             if(!committed)throw new InvalidOperationException("Native construction did not register a building: "+id);
         }finally{
@@ -264,8 +310,9 @@ public sealed partial class StrategicSupport
         }
         CommitLayout(c,intent);
         Note($"build-invest city={c.OJPECMNINNA} district={blockId} building={id} priority={priorityBest} cost={best.NPCHPDNFAME} transfer={transfer} cityCash={row.DNOGPFHMOMO}");
-        yield return true;
+        return true;
     }
+
 }
 
 

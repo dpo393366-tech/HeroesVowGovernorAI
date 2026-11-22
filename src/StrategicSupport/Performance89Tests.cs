@@ -1,4 +1,4 @@
-﻿using System;using System.Reflection;using System.Collections;using System.Collections.Generic;using System.Linq;using UnityEngine;
+using System;using System.Reflection;using System.Collections;using System.Collections.Generic;using System.Linq;using UnityEngine;
 public static class Performance89Tests {
  const BindingFlags F=BindingFlags.Static|BindingFlags.NonPublic;static int checks;
  static object Call(string n,params object[] a)=>typeof(StrategicSupport).GetMethod(n,F).Invoke(null,a);
@@ -31,10 +31,6 @@ public static class Performance89Tests {
   typeof(City80Tests).GetMethod("Setup",F).Invoke(null,new object[]{new[]{30,0,0}});f=NEINKOOBJIH.COCMABJFOFH["F"];source=MICGPAMNDKM.IJPKEMPIFIH["city0"];
   var destinations=new List<AFAGFHJONFJ>();int edges=0;foreach(var phase in (IEnumerable<string>)Call("CapacityDestinationSteps",source,f,destinations))edges++;
   Check(edges>=6&&destinations.Count==2,"connectivity scan split without losing reachable cities");
-  var costs=(IDictionary)typeof(StrategicSupport).GetField("phaseCosts",F).GetValue(null);costs.Clear();
-  Call("RecordPhaseCost","city:one/route-territory",1d);Call("RecordPhaseCost","city:two/route-territory",8d);
-  var cost=costs["city/route-territory"];Check(costs.Count==1&&Data<long>(cost,"Count")==2&&Data<double>(cost,"Total")==9&&Data<double>(cost,"Max")==8,"phase statistics combine city IDs without losing duration or calls");
-  Check((double)cost.GetType().GetMethod("P95").Invoke(cost,null)==8,"histogram reports p95 upper bound correctly");costs.Clear();
-  Call("ResetWork");Console.WriteLine($"PASS R89 {checks} sliced path/connectivity/profiling checks; no FPS claims from mocks.");
+  Call("ResetWork");Console.WriteLine($"PASS R89 {checks} sliced path/connectivity checks; no FPS claims from mocks.");
  }
 }

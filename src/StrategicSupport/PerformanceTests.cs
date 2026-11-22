@@ -53,13 +53,13 @@ public static class PerformanceTests
   }
   Setup();c=Get<AFAGFHJONFJ>(typeof(CityIntegrationTests),"c");f=Get<MKMOJNAJKJE>(typeof(CityIntegrationTests),"f");var governor=f.ANMMMOIKLEG["gov"];f.DNOGPFHMOMO=415349;
   governor.OnResearch=()=>f.DNOGPFHMOMO-=10000;
-  using(var tasks=(IEnumerator<string>)Call("CityWork",c)){while(tasks.MoveNext()&&tasks.Current!="maintenance"){} }
+  using(var tasks=(IEnumerator<string>)Call("CityResearchWork",c,f,c.LMPMNLLGOEC.IPJHOOJBCKI)){while(tasks.MoveNext()){} }
   Check(governor.ResearchCalls==4&&f.DNOGPFHMOMO==375349,"wealthy research cycle launches four paid native projects with yields");
   Setup();c=Get<AFAGFHJONFJ>(typeof(CityIntegrationTests),"c");f=Get<MKMOJNAJKJE>(typeof(CityIntegrationTests),"f");governor=f.ANMMMOIKLEG["gov"];f.DNOGPFHMOMO=40000;governor.OnResearch=()=>f.DNOGPFHMOMO-=10000;
-  using(var tasks=(IEnumerator<string>)Call("CityWork",c)){while(tasks.MoveNext()&&tasks.Current!="maintenance"){} }
+  using(var tasks=(IEnumerator<string>)Call("CityResearchWork",c,f,c.LMPMNLLGOEC.IPJHOOJBCKI)){while(tasks.MoveNext()){} }
   Check(governor.ResearchCalls==1&&f.DNOGPFHMOMO==30000,"multi-project cycle stops at treasury reserve");
   Setup();c=Get<AFAGFHJONFJ>(typeof(CityIntegrationTests),"c");f=Get<MKMOJNAJKJE>(typeof(CityIntegrationTests),"f");governor=f.ANMMMOIKLEG["gov"];
-  using(var tasks=(IEnumerator<string>)Call("CityWork",c)){while(tasks.MoveNext()&&tasks.Current!="maintenance"){} }
+  using(var tasks=(IEnumerator<string>)Call("CityResearchWork",c,f,c.LMPMNLLGOEC.IPJHOOJBCKI)){while(tasks.MoveNext()){} }
   Check(governor.ResearchCalls==1,"no-progress research cycle stops without spinning");
   Set("schedulerOnline",false);Call("ResetWork");
   // Production logger receives only text; concurrent producers are preserved.

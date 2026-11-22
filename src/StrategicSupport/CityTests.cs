@@ -16,7 +16,7 @@ public class PABIPDOFBFG:Native{
  public FFDDNPOHLHN OCJNCECECMH;
  public string OJPECMNINNA,MDOIJIAONJM,EIMGMPDMAAJ,JADLIKBKOHG;public bool POLCGKHKLHI,FHKHHKBBKGM;
  public int NPCHPDNFAME=600,MLAJLJKFGBD=2,PNPLBNAFMCM=2,IKELHGAHBID,ODKKMLDAPJL,ADGOBJJMEAO,GJPOJINPCHP;
- public int OGFAHJHBCNG=1000,OFHFGEBGMBD,DHLNIKKLNKJ,KGIMAFCNEKE,LCKEPHGCAPC,IIBKLLKPNEH,PEGLDBENJMF,HIKFEJKBPIK,DJNPCHEJGNM,EOJNDEDNEKE,LAIEKKPFOKF,EMHGLEDIOHK;public bool KFCEGGHJGGB=true;
+ public int OGFAHJHBCNG=1000,OFHFGEBGMBD,DHLNIKKLNKJ,KGIMAFCNEKE,LCKEPHGCAPC,IIBKLLKPNEH,PEGLDBENJMF,HIKFEJKBPIK,DJNPCHEJGNM,EOJNDEDNEKE,LAIEKKPFOKF,EMHGLEDIOHK;public bool KFCEGGHJGGB=true;public float DONIEGIDACP=20;public string KAPKDBGFHEG(int language)=>OJPECMNINNA;
  public MHCEFEODENB HFBAJIGHOAF=MHCEFEODENB.Commerce;public int[]LJCICFHPMLM={-1,-1,-1,-1};
  public int CNCPIILGDEF=100,AJJJJNDNNME,CGBGIDCEBGD,EGBEEDFCIGH,HKBPGJLMFIG,DPFIFIOKHEI;
  public float FIPONBEGNJO,NIKFGJLNNCA,LGCANBOEGGH,AIFPACNFKDB;
@@ -27,6 +27,7 @@ public class PABIPDOFBFG:Native{
  public bool LOJCCNNJKHF(AFAGFHJONFJ c,bool p)=>LJCICFHPMLM[c.MPGFDBPEHBO(true)]>=0&&c.ELKFAJKBPKJ(OJPECMNINNA,true,true).Count>=LJCICFHPMLM[c.MPGFDBPEHBO(true)];
 }
 public class OGABIJECHFG:Native{
+ public UnityEngine.Vector3 BJHLIMBCBNN;public GHIHNCIFMBB EOMMBIBIEJN;public bool ABEAICBDKLD;public string BHPDJIDJHPF;
  public FEEDONDCELP[] Cells=Array.Empty<FEEDONDCELP>();public FEEDONDCELP[] JNMLGGLLANN()=>Cells;
  public PABIPDOFBFG GEKKLMPLDHJ;public JNHOOCJJPJO GMIKIMACDBC;public int OJPECMNINNA,OGFAHJHBCNG=1000,JOFCACIPJKK;public string LHCJPKGANCK;
  public float EMHNNCLBADE=100,BNMEOOJPOML=100;public bool MGLFFEANDOI,ThrowBeforeUpgrade,ThrowAfterUpgrade,ThrowRepair;
@@ -36,7 +37,7 @@ public class OGABIJECHFG:Native{
  public void GMMDMPFFIGP(string id,bool complete){if(ThrowBeforeUpgrade)throw new Exception("upgrade pre-change failure");GEKKLMPLDHJ=AEHAGJAKNEK.ACIGFKMDOKE[id];EMHNNCLBADE=complete?100:0;if(ThrowAfterUpgrade)throw new Exception("upgrade post-change failure");}
 }
 public class FEEDONDCELP:Native{
- public int BJHLIMBCBNN,HFBAJIGHOAF,PAHKDHJPFKD,GHMMBOIKHNC,FCOJFBEHMAG=-9999,PMGDGAAICCG,FPOIMBFMEDH,FGHAPGBJINB;public bool ICGFBPCAJCI;public JNHOOCJJPJO GMIKIMACDBC;
+ public UnityEngine.Vector3 BJHLIMBCBNN;public int HFBAJIGHOAF,PAHKDHJPFKD,GHMMBOIKHNC,FCOJFBEHMAG=-9999,PMGDGAAICCG,FPOIMBFMEDH,FGHAPGBJINB;public bool ICGFBPCAJCI;public JNHOOCJJPJO GMIKIMACDBC;
 }
 public class Ci_BuildingCtrl {public static implicit operator bool(Ci_BuildingCtrl x)=>x!=null;public void RemoveBuilding(bool x){}public static Ci_BuildingCtrl GetOne(OGABIJECHFG x)=>new();}
 public class PEGMABENGBB:Native{
@@ -47,21 +48,27 @@ public class PEGMABENGBB:Native{
  public bool BFPBNAKIKEO(PABIPDOFBFG b)=>!Occupied&&Street&&PABEMCAGKJJ*HAPLIFADGBA==b.MLAJLJKFGBD*b.PNPLBNAFMCM;
 }
 public class JNHOOCJJPJO:Native{
- public bool PLIFMOIBPME;public int BJHLIMBCBNN,FMANEHEEDKP,GHECBGMGBBK,NDOFLDJGDOM;
+ public bool PLIFMOIBPME;public UnityEngine.Vector3 BJHLIMBCBNN;public int FMANEHEEDKP,GHECBGMGBBK,NDOFLDJGDOM;
  public Il2CppSystem.Collections.Generic.List<Il2CppSystem.Collections.Generic.List<FEEDONDCELP>> FAFNFFJAFKH;
  public void BCJALLCJCNL(){} public void BBJBFAFMCCB(bool unused){if(FAFNFFJAFKH==null)return;HGNFEMJOPPB.Clear();if(PLIFMOIBPME)return;for(int y=0;y<FAFNFFJAFKH.Count;y++)for(int x=0;x<FAFNFFJAFKH[y].Count;x++)for(int h=1;h<=2;h++)for(int w=1;w<=2;w++){
   if(y+h>FAFNFFJAFKH.Count||x+w>FAFNFFJAFKH[y].Count)continue;var cells=new List<FEEDONDCELP>();for(int yy=y;yy<y+h;yy++)for(int xx=x;xx<x+w;xx++)cells.Add(FAFNFFJAFKH[yy][xx]);if(cells.Any(q=>q.FCOJFBEHMAG!=-9999))continue;
   HGNFEMJOPPB.Add(new(){GMIKIMACDBC=this,PABEMCAGKJJ=w,HAPLIFADGBA=h,FAFNFFJAFKH=cells.ToArray(),Street=cells.Any(q=>q.ICGFBPCAJCI),NEDMGJPJNKA=cells.Any(q=>q.ICGFBPCAJCI)});
  }}
- public void FPFEFLILLFN(OGABIJECHFG x,bool unused){x.GMIKIMACDBC=this;AIMLPNBOIIF.Add(x);foreach(var q in x.Cells)q.FCOJFBEHMAG=x.OJPECMNINNA;}
+ public void FPFEFLILLFN(OGABIJECHFG x,bool unused){x.GMIKIMACDBC=this;AIMLPNBOIIF.Add(x);foreach(var q in x.Cells)q.FCOJFBEHMAG=x.OJPECMNINNA;if(PLIFMOIBPME&&x.Cells.Length>0){x.JOFCACIPJKK=x.Cells[0].PMGDGAAICCG;AJJCCPCJPFC.NBEJCGLJHJA.Add(x);}}
+ static int wallSerial=30000;public int GroundWallCalls,WallCalls;public bool FailWallLink;
+ public void MAOKGGOJNPM(OGABIJECHFG x,bool skipRefresh,bool register){
+  WallCalls++;if(NoRegister)return;x.OJPECMNINNA=++wallSerial;
+  x.Cells=FailWallLink?Array.Empty<FEEDONDCELP>():FAFNFFJAFKH.SelectMany(r=>r).Where(q=>(q.BJHLIMBCBNN-AJJCCPCJPFC.FCIJDABCHEN-BJHLIMBCBNN-x.BJHLIMBCBNN).sqrMagnitude<1).Take(1).ToArray();
+  FPFEFLILLFN(x,true);if(ThrowAfterRegister)throw new InvalidOperationException("scene refresh failed");
+ }
  public string HLGFIMOKLAK;public int EMPGDOLPPFI(OKDBGMLHBAP faction,bool privateTax)=>AIMLPNBOIIF.Sum(x=>x.GEKKLMPLDHJ.CNCPIILGDEF);
  public string OJPECMNINNA;public AFAGFHJONFJ AJJCCPCJPFC;public HNDFFIEJNHI KFCOLLDEJNF=HNDFFIEJNHI.Public;
  public LDPAFPHFBCP HFBAJIGHOAF=LDPAFPHFBCP.Function;public List<OGABIJECHFG>AIMLPNBOIIF=new();public List<PEGMABENGBB>HGNFEMJOPPB=new();
  public int IMMLKOLPPHF()=>AIMLPNBOIIF.Sum(x=>x.GEKKLMPLDHJ.CGBGIDCEBGD);
  public int KMDCHCBIAIG()=>AIMLPNBOIIF.Sum(x=>x.GEKKLMPLDHJ.EGBEEDFCIGH);
  public bool NoRegister,ThrowAfterRegister;
- public void PJNMLNMLAKA(PABIPDOFBFG b,PEGMABENGBB p){if(NoRegister)return;p.Occupied=true;var created=new OGABIJECHFG{OJPECMNINNA=10000+AIMLPNBOIIF.Count,GEKKLMPLDHJ=b,GMIKIMACDBC=this,EMHNNCLBADE=0,OGFAHJHBCNG=b.OGFAHJHBCNG,Cells=p.FAFNFFJAFKH.Take(p.PABEMCAGKJJ*p.HAPLIFADGBA).ToArray()};FPFEFLILLFN(created,false);if(ThrowAfterRegister)throw new InvalidOperationException("scene refresh failed");}
- public void HNIEPCENKGC(OGABIJECHFG x){AIMLPNBOIIF.Remove(x);foreach(var q in x.Cells)q.FCOJFBEHMAG=-9999;}
+ public void PJNMLNMLAKA(PABIPDOFBFG b,PEGMABENGBB p){if(PLIFMOIBPME)GroundWallCalls++;if(NoRegister)return;p.Occupied=true;var created=new OGABIJECHFG{OJPECMNINNA=10000+AIMLPNBOIIF.Count,GEKKLMPLDHJ=b,GMIKIMACDBC=this,EMHNNCLBADE=0,OGFAHJHBCNG=b.OGFAHJHBCNG,Cells=PLIFMOIBPME?Array.Empty<FEEDONDCELP>():p.FAFNFFJAFKH.Take(p.PABEMCAGKJJ*p.HAPLIFADGBA).ToArray()};FPFEFLILLFN(created,false);if(ThrowAfterRegister)throw new InvalidOperationException("scene refresh failed");}
+ public void HNIEPCENKGC(OGABIJECHFG x){AIMLPNBOIIF.Remove(x);AJJCCPCJPFC?.NBEJCGLJHJA.Remove(x);foreach(var q in x.Cells)if(q.FCOJFBEHMAG==x.OJPECMNINNA)q.FCOJFBEHMAG=-9999;}
 }
 public class PGLFLKOHDFO{public DDBHJKOIIPI HFBAJIGHOAF;public string IJNEIHPHMEE;public int KLCDGPDHENB;}
 public class HIADFOLCFII{
@@ -73,6 +80,10 @@ public partial class MKMOJNAJKJE{public float IJJDBPGOJJA(COGDLKNKJGA kind,AFAGF
 public partial class FNFJODHIJFO{public int ResearchCalls;public Action OnResearch;public bool ThrowResearch;public void OHBNFHKFNPH(){ResearchCalls++;OnResearch?.Invoke();if(ThrowResearch)throw new Exception("injected research failure");}public Il2CppSystem.Collections.Generic.List<AFAGFHJONFJ> PJMLPLDPEIM(){var result=new Il2CppSystem.Collections.Generic.List<AFAGFHJONFJ>();foreach(var c in MICGPAMNDKM.IJPKEMPIFIH.Values)if(c.LMPMNLLGOEC.LMMNKIOAGLC==LMMNKIOAGLC && NEINKOOBJIH.COCMABJFOFH[LMMNKIOAGLC].ANMMMOIKLEG.TryGetValue(c.LMPMNLLGOEC.IPJHOOJBCKI,out var g) && g.Pointer==Pointer)result.Add(c);return result;}}
 public static partial class AEHAGJAKNEK{public static bool KDHLLDHILCO(string id,out CLAGKDECFID h){h=null;return false;}public static Dictionary<string,PABIPDOFBFG> ACIGFKMDOKE=new();public static Dictionary<string,GGOGLBGDEJJ> HMHMMONMBAP=new();}
 public partial class AFAGFHJONFJ{
+ public UnityEngine.Vector3 FCIJDABCHEN;public Il2CppSystem.Collections.Generic.List<OGABIJECHFG> NBEJCGLJHJA=new();
+ // Native DAEIKODOFGJ visits only the requested wall side, then advances
+ // the first unfinished project on it. A registered row with side zero stalls.
+ public float DAEIKODOFGJ(float effort,int side){foreach(var x in NBEJCGLJHJA)if(x.JOFCACIPJKK==side&&x.EHABIIDOKGC()){float used=Math.Min(effort,x.BNMEOOJPOML-x.EMHNNCLBADE);x.EMHNNCLBADE+=used;return effort-used;}return effort;}
  public float EHCCLNDFJGL(HLIMKFFGEPO kind)=>0;
  public List<JNHOOCJJPJO>FGBLEMGGOPO=new();public List<HIADFOLCFII>HFLAGGEFBOO=new();public bool Siege,CanPlan=true;
  public int StaffingCalls;public void OBIOEOJAHMM(){StaffingCalls++;}
@@ -143,7 +154,8 @@ public static class CityIntegrationTests
   Setup();Add("market");c.LMPMNLLGOEC.IPJHOOJBCKI="player";Call("AfterRecruitInvestment",c,false);Check(d.AIMLPNBOIIF.Count==0,"player personal district excluded");
   Setup();Add("market");c.Player=true;c.OPNKGGKHAGJ=false;c.LMPMNLLGOEC.BKENJPNKMGI="player";Call("AfterRecruitInvestment",c,false);Check(d.AIMLPNBOIIF.Count==0,"manually managed city excluded");
   Setup();Add("market");Call("AfterRecruitInvestment",c,true);Check(d.AIMLPNBOIIF.Count==0,"private recruitment update excluded");
-  Call("AfterRecruitInvestment",c,false);Check(d.AIMLPNBOIIF.Count>0&&d.AIMLPNBOIIF.Count<=2,"bounded city build update");Check(f.ANMMMOIKLEG["gov"].ResearchCalls==1,"native research reconsidered");
+  ((BepInEx.Configuration.ConfigEntry<int>)typeof(StrategicSupport).GetField("buildsPerCity",BindingFlags.NonPublic|BindingFlags.Static).GetValue(null)).Value=2;
+  Call("AfterRecruitInvestment",c,false);Check(d.AIMLPNBOIIF.Count>0&&d.AIMLPNBOIIF.Count<=2,"explicit two-building user limit retained");Check(f.ANMMMOIKLEG["gov"].ResearchCalls==1,"native research reconsidered");
   Call("AfterRecruitInvestment",c,false);Check(f.ANMMMOIKLEG["gov"].ResearchCalls==1,"no repeated research on same tick");
   Setup();Set("researchOwner",f);f.DNOGPFHMOMO=30500;
   var list=new Il2CppSystem.Collections.Generic.List<FBLFDEEGJMH>{new(){Cost=600},new(){Cost=400}};object[] args={f,list,null};

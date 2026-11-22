@@ -23,6 +23,11 @@ public static class CityLayoutOptimizer {
   if(actions.Count==0){done(new());yield break;}
   double GoalScore(Dictionary<string,double> gains){double sum=0;foreach(var pair in needs)if(pair.Value.Missing>0){gains.TryGetValue(pair.Key,out double supplied);sum+=Math.Min(1,Math.Max(0,supplied)/pair.Value.Missing);}return sum;}
   var baseline=existing??Array.Empty<BuildingEffectsPolicy.Building>();var baseDistricts=baseline.GroupBy(b=>b.District??"").ToDictionary(g=>g.Key,g=>g.ToList());var baseOutputs=baseDistricts.ToDictionary(kv=>kv.Key,kv=>BuildingEffectsPolicy.Evaluate(kv.Value,false));var baseSpecials=new HashSet<int>(baseline.Select(b=>b.Special));var clock=Stopwatch.StartNew();
+  // The same district prefix is shared by many whole-city beam candidates.
+  // Cache its exact ordered output, not a sorted set: native truncation can
+  // make multiplier order significant. This cache belongs to this snapshot
+  // only, so research, expansion and other city changes cannot reuse it.
+  var districtOutputs=new Dictionary<(string,string),BuildingEffectsPolicy.Output>();
   int maximum=actions.SelectMany(a=>a.Tiles).Distinct().Count();
   var beam=new List<Plan>{new(){Popular=popular,Security=security,Commerce=commerce,Agriculture=agriculture,Population=population}};Plan best=beam[0];int probes=0;
   for(int depth=0;depth<maximum;depth++){
@@ -39,9 +44,17 @@ public static class CityLayoutOptimizer {
       Gains=new(p.Gains),PopulationAdd=p.PopulationAdd+a.PopulationAdd,Population=p.Population+a.PopulationFlow,Popular=p.Popular+a.PopularFlow,Security=p.Security+a.SecurityFlow,Commerce=p.Commerce+a.Commerce,Agriculture=p.Agriculture+a.Agriculture,Value=p.Value+a.BaseValue+synergy-a.Cost*.001,Money=p.Money+a.Money,Food=p.Food+a.Food};
      n.Steps.Add(i);n.Cells.UnionWith(a.Tiles);n.Counts[a.Id]=count+1;
      if(growth!=null)n.Population=population+growth(n.Commerce-commerce+n.Agriculture-agriculture,n.PopulationAdd);
-     if(a.Effects!=null){string district=a.District??"";var projected=baseDistricts.TryGetValue(district,out var original)?new List<BuildingEffectsPolicy.Building>(original):new();
-      foreach(int j in n.Steps)if(actions[j].Effects!=null&&actions[j].District==a.District)projected.Add(actions[j].Effects);
-      var output=BuildingEffectsPolicy.Evaluate(projected,false);if(!p.Outputs.TryGetValue(district,out var before))baseOutputs.TryGetValue(district,out before);
+     if(a.Effects!=null){string district=a.District??"";
+      var districtSteps=n.Steps.Where(j=>actions[j].Effects!=null&&actions[j].District==a.District).ToArray();
+      var outputKey=(district,string.Join(",",districtSteps));
+      if(!districtOutputs.TryGetValue(outputKey,out var output)){
+       var projected=baseDistricts.TryGetValue(district,out var original)?new List<BuildingEffectsPolicy.Building>(original):new();
+       foreach(int j in districtSteps)projected.Add(actions[j].Effects);
+       output=BuildingEffectsPolicy.Evaluate(projected,false);
+       if(districtOutputs.Count>=4096)districtOutputs.Clear();
+       districtOutputs[outputKey]=output;
+      }
+      if(!p.Outputs.TryGetValue(district,out var before))baseOutputs.TryGetValue(district,out before);
       n.Outputs=new(p.Outputs);n.Outputs[district]=output;n.Value=p.Value+a.BaseValue-a.Cost*.001+output.Value-before.Value;n.Money=p.Money+output.Money-before.Money;n.Food=p.Food+output.Food-before.Food;
       int special=a.Effects.Special;if(special>0&&!baseSpecials.Contains(special)&&!prior.Any(step=>step.Effects?.Special==special))n.Value+=100;
      }

@@ -111,6 +111,7 @@ public sealed partial class StrategicSupport
     {
         if(!maintenance.Value||!Eligible(c,out var owner)||owner.Pointer!=f.Pointer||c.GKLIEHCHDLD()
             ||!AIGate("maintain:"+c.OJPECMNINNA,f.IBGCLCAIBOL,10)||c.FGBLEMGGOPO==null)yield break;
+        foreach(var step in RepairWallRegistrations(c,f))yield return step;
         string governor=c.LMPMNLLGOEC.IPJHOOJBCKI;var world=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;var definitions=new List<PABIPDOFBFG>();foreach(var kv in AEHAGJAKNEK.ACIGFKMDOKE)definitions.Add(kv.Value);var rows=new List<(JNHOOCJJPJO d,OGABIJECHFG x)>();
         foreach(var d in c.FGBLEMGGOPO){if(d?.AIMLPNBOIIF==null)continue;foreach(var x in d.AIMLPNBOIIF)if(PublicBuilding(c,d,x))rows.Add((d,x));}
         // Most damaged facilities first, so enumeration order cannot starve repair.
@@ -125,12 +126,19 @@ public sealed partial class StrategicSupport
         // A missing barracks slot takes precedence over discretionary upgrades
         // and relocation; repairs above preserve facilities already in use.
         if(construction.Value&&BarracksMissing(c,f).Count>0)yield break;
-        int capacityDeficit=CapacityShortfall(c);
-        if(upgradeBuildings.Value){OGABIJECHFG selected=null;PABIPDOFBFG target=null;double score=0;
+        if(upgradeBuildings.Value){
             var upgradeIndex=new Dictionary<string,List<PABIPDOFBFG>>();
             foreach(var b in definitions)if(b!=null&&!string.IsNullOrEmpty(b.MDOIJIAONJM)){if(!upgradeIndex.TryGetValue(b.MDOIJIAONJM,out var list))upgradeIndex[b.MDOIJIAONJM]=list=new();list.Add(b);}
+            var upgraded=new HashSet<IntPtr>();
+            for(int pass=0;pass<8;pass++){
+            // Each purchase resumes on a later queue slice and reevaluates the
+            // remaining candidates against current costs, limits and city state.
+            if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=world||!CurrentCity(c,f,governor)||!upgradeBuildings.Value)yield break;
+            if(construction.Value&&BarracksMissing(c,f).Count>0)yield break;
+            int capacityDeficit=CapacityShortfall(c);
+            OGABIJECHFG selected=null;PABIPDOFBFG target=null;double score=0;
             var upgradeBlocks=new List<string>();int upgradeCandidates=0;
-            foreach(var (d,x) in rows){yield return false;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=world||!CurrentCity(c,f,governor))yield break;if(!Present(d,x)||!PublicBuilding(c,d,x))continue;if(!Completed(x)||OccupiedBuilding(x))continue;var a=x.GEKKLMPLDHJ;
+            foreach(var (d,x) in rows){yield return false;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=world||!CurrentCity(c,f,governor))yield break;if(upgraded.Contains(x.Pointer)||!Present(d,x)||!PublicBuilding(c,d,x))continue;if(!Completed(x)||OccupiedBuilding(x))continue;var a=x.GEKKLMPLDHJ;
                 if(!upgradeIndex.TryGetValue(a.OJPECMNINNA,out var upgrades))continue;
                 foreach(var b in upgrades){yield return false;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=world||!CurrentCity(c,f,governor))yield break;if(!Present(d,x)||!PublicBuilding(c,d,x)||!Completed(x)||OccupiedBuilding(x))break;
                     upgradeCandidates++;string blocked=b.IKELHGAHBID>a.IKELHGAHBID&&capacityDeficit==0&&(c.LMPMNLLGOEC.KJPPGIOCDID?.Count??0)>c.JNLIOIHLDHH()?"capacity-expansion-pending":UpgradeBlock(c,f,x,b);if(blocked!=null){if(upgradeBlocks.Count<40)upgradeBlocks.Add(a.OJPECMNINNA+"->"+b.OJPECMNINNA+":"+blocked);continue;}
@@ -142,9 +150,15 @@ public sealed partial class StrategicSupport
             if(Gate("upgrade-audit:"+c.OJPECMNINNA,30))Note($"upgrade-audit city={c.OJPECMNINNA} candidates={upgradeCandidates} selected={target?.OJPECMNINNA} blocked=[{string.Join(";",upgradeBlocks)}]");
             if(selected!=null&&Present(selected.GMIKIMACDBC,selected)&&Completed(selected)&&!OccupiedBuilding(selected)&&CanUpgrade(c,f,selected,target)){var old=selected.GEKKLMPLDHJ;var oldProgress=selected.EMHNNCLBADE;
                 if(SpendBuilding(c,f,target,()=>selected.GMMDMPFFIGP(target.OJPECMNINNA,false),()=>selected.GEKKLMPLDHJ?.Pointer!=old.Pointer||selected.EMHNNCLBADE!=oldProgress)){
-                    Note($"maintain upgrade city={c.OJPECMNINNA} building={old.OJPECMNINNA}->{target.OJPECMNINNA}");yield return true;yield break;
+                    upgraded.Add(selected.Pointer);
+                    Note($"maintain upgrade city={c.OJPECMNINNA} building={old.OJPECMNINNA}->{target.OJPECMNINNA} batch={upgraded.Count}/8");yield return true;continue;
                 }
             }
+            break;
+            }
+            // Do not mix demolition/relocation into a visit that just changed
+            // building definitions. The next visit obtains a fresh snapshot.
+            if(upgraded.Count>0)yield break;
         }
         if(NEINKOOBJIH.JKGJNLHLJAJ?.Pointer==c.Pointer||!demolishBuildings.Value)yield break;
         if(remodelJobs.TryGetValue(c.OJPECMNINNA,out var job)){

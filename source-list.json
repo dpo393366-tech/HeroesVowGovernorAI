@@ -41,7 +41,6 @@
     "OfficerExchange.cs",
     "DevelopmentAgenda.cs",
     "AIDiagnostics.cs",
-    "AIPerformanceDetail.cs",
     "CityCapacityAudit.cs",
     "CapacityPlanning.cs",
     "OfficerRelocation.cs",
@@ -98,7 +97,9 @@
     "BattleDispatchRetry.cs",
     "DispatchDiagnostics.cs",
     "AttackProbeCapacity.cs",
-    "FamilyOfficerProtection.cs"
+    "FamilyOfficerProtection.cs",
+    "BattleCorridors.cs",
+    "WallConstruction.cs"
   ],
   "StrategicSupportTests": [
     "IntegrationTests.cs",
@@ -175,7 +176,12 @@
     "Construction123Tests.cs",
     "Muster123Tests.cs",
     "Convoy123Tests.cs",
-    "Evacuation124Tests.cs"
+    "Evacuation124Tests.cs",
+    "Editor125Tests.cs",
+    "Construction127Tests.cs",
+    "CityPlanning128Tests.cs",
+    "Corridor132Tests.cs",
+    "Wall133Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

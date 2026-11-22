@@ -1,4 +1,4 @@
-using System;using System.Collections;using System.Collections.Generic;using System.Linq;using System.Reflection;using UnityEngine;using UnityEngine.AI;
+﻿using System;using System.Collections;using System.Collections.Generic;using System.Linq;using System.Reflection;using UnityEngine;using UnityEngine.AI;
 public static class BattleRetry118Tests {
  const BindingFlags F=BindingFlags.NonPublic|BindingFlags.Static;static int checks;static AFAGFHJONFJ source;static NJHDEHLHENN war;static MKMOJNAJKJE faction;
  static object Call(string n,params object[] a)=>typeof(StrategicSupport).GetMethod(n,F).Invoke(null,a);
@@ -18,7 +18,7 @@ public static class BattleRetry118Tests {
   Check(source.Calls==1,"143 unchanged assessments cause one assembly, not 143 notifications");
   NEINKOOBJIH.MIPFHCKDJOK=101;Send(_=>false);NEINKOOBJIH.MIPFHCKDJOK=102;Send(_=>false);Check(source.Calls==1,"next two daily decisions do not reassemble unchanged rejected force");
   Check(Send(_=>true)!=null&&source.Calls==2,"battle becomes supportable at measured ETA: retry immediately");
-  Setup();Send(_=>false);war=new(){HIENOINGBCN="another war"};Check(Send()!=null&&source.Calls==2,"same city may support another battle immediately");
+  Setup();Send(_=>false);war=new(){HIENOINGBCN="another war",GBHGENNMJCK=new(-100)};Check(Send()!=null&&source.Calls==2,"same city may support another battle immediately");
   Setup();Send(_=>false);source.LMPMNLLGOEC.KJPPGIOCDID.Add(new());Check(Send(_=>false)==null&&source.Calls==2,"new local troop roster reopens assessment");
   Setup();Send(_=>false);war.GBHGENNMJCK=new(80);Send(_=>false);Check(source.Calls==2,"battle movement invalidates rejected road/arrival snapshot");
   Setup();Send(_=>false);NEINKOOBJIH.MIPFHCKDJOK=103;Send(_=>false);Check(source.Calls==2,"bounded periodic retry can detect unobserved native changes");

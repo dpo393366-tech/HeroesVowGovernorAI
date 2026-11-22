@@ -6,6 +6,7 @@ public sealed partial class StrategicSupport {
   var world=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;var destination=w.GBHGENNMJCK;string faction=f.IBGCLCAIBOL,foe=w.EMMJBPMNFAK[1-side];
   bool Valid()=>Ready()&&CurrentFaction(f)&&MICGPAMNDKM.IJPKEMPIFIH?.Pointer==world&&battles.TryGetValue(w.Pointer,out var current)&&ReferenceEquals(current,state)&&w.HIENOINGBCN==state.Name&&IsDirect(w)==direct&&w.EMMJBPMNFAK!=null&&w.EMMJBPMNFAK.Length==2&&w.EMMJBPMNFAK[side]==faction&&w.EMMJBPMNFAK[1-side]==foe&&War(f,foe)&&Vector3.Distance(destination,w.GBHGENNMJCK)<.01f&&Soldiers(w,0,direct)>0&&Soldiers(w,1,direct)>0;
   if(!Valid())yield break;
+  RefreshBattleCorridors(AttackTeams());
   long routeStarted=Environment.TickCount64;int reused=0,computed=0;
   string roadStamp=RoadPolicyStamp(f);var sources=ProtectedCities(f);var routes=new Dictionary<string,double>();var skipped=new List<string>();
   // Finish the candidate batch before ranking. Pending is not unreachable.
@@ -20,7 +21,7 @@ public sealed partial class StrategicSupport {
    else reused++;
    if(RoadPolicyStamp(f)!=roadStamp){state.Next=state.SideNext[side]=double.NegativeInfinity;Note($"battle-road-replan war={w.HIENOINGBCN} faction={faction} reason=policy-changed-during-quotes");yield break;}
    if(battleRoutes.TryGetValue(key,out var quote)&&quote.Stamp==roadStamp&&double.IsFinite(quote.Eta))routes[city.OJPECMNINNA]=quote.Eta;
-   else skipped.Add(city.OJPECMNINNA+":unreachable-or-changed");
+   else {skipped.Add(city.OJPECMNINNA+":unreachable-or-changed");RequestCorridorBreakthrough(city,w,f);}
   }
   Note($"battle-road-cache war={w.HIENOINGBCN} faction={faction} reused={reused} calculated={computed} elapsedMs={Environment.TickCount64-routeStarted} next=rank-current-forces-by-road-eta");
   sources.RemoveAll(c=>!routes.ContainsKey(c.OJPECMNINNA));
@@ -31,7 +32,7 @@ public sealed partial class StrategicSupport {
    yield return "source-decision";if(!Valid())yield break;
    if(RoadPolicyStamp(f)!=roadStamp){state.Next=state.SideNext[side]=double.NegativeInfinity;Note($"battle-road-replan war={w.HIENOINGBCN} faction={faction} reason=ownership-or-passage-changed");yield break;}rank++;
    // No combat, troop, reservation or food snapshot is retained across yields.
-   CleanMissions();var teams=AttackTeams();var reserved=AttackReserved(teams);var loss=state.Loss[side];
+   CleanMissions();var teams=AttackTeams();RefreshBattleCorridors(teams);var reserved=AttackReserved(teams);var loss=state.Loss[side];
    int own=Soldiers(w,side,direct),enemyCount=Soldiers(w,1-side,direct);double eta=routes[c.OJPECMNINNA];
    void Block(string why){skipped.Add(c.OJPECMNINNA+":"+why);if(Gate("battle-block:"+w.HIENOINGBCN+":"+c.OJPECMNINNA+":"+why,30))Note($"battle-support-blocked war={w.HIENOINGBCN} faction={faction} source={c.OJPECMNINNA} rank={rank} eta={eta:F1} reason={why}");}
    string sourceBlock=SupportSourceRules(c,teams,reserved,true);if(sourceBlock!=null){Block(sourceBlock);continue;}
@@ -40,7 +41,7 @@ public sealed partial class StrategicSupport {
    var friends=new List<ReinforcementTimeline.Wave>();var enemies=new List<ReinforcementTimeline.Wave>();
    foreach(var t in teams){
     if(t.m_warInfo!=null)continue;
-    if(t.m_belongPower==faction&&Same(t.m_targetWarInfo,w)){
+    if(t.m_belongPower==faction&&Same(t.m_targetWarInfo,w)&&CorridorArrivalClear(t,w,f)){
      double at=Travel(t,w);if(at<=maxTravelSeconds.Value&&double.IsFinite(TeamArrival(t,w.GBHGENNMJCK)))friends.Add(new(at,Math.Max(0,t.GetSoldierNum(false))));
     }else if(t.m_belongPower==foe&&(Same(t.m_targetWarInfo,w)||(w.IJGLCFJOOIK!=null&&t.m_targetCity==w.IJGLCFJOOIK.OJPECMNINNA))){
      double at=Travel(t,w);if(at<=maxTravelSeconds.Value&&double.IsFinite(TeamArrival(t,w.GBHGENNMJCK)))enemies.Add(new(at,Math.Max(0,t.GetSoldierNum(false))));

@@ -19,7 +19,7 @@ public sealed partial class StrategicSupport {
   string owner=city.LMPMNLLGOEC.LMMNKIOAGLC;
   return string.IsNullOrEmpty(owner)||owner==faction.IBGCLCAIBOL||war.EMMJBPMNFAK.Contains(owner)?city.OJPECMNINNA:null;
  }
- sealed class RoutePlan {public bool Success;public double Length;public List<Vector3> Points=new();public string Failure="native-route-or-territory";public List<Vector3> Legs=new();}
+ sealed class RoutePlan {public NJHDEHLHENN CorridorBlocker;public bool CorridorDetour;public bool Success;public double Length;public List<Vector3> Points=new();public string Failure="native-route-or-territory";public List<Vector3> Legs=new();}
  // Planning callers consume one native territory sample per scheduler slice.
  // Final native command validation drains the exact same checks synchronously.
  static bool ReliefPath(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,out List<Vector3> points,out double length){
@@ -27,9 +27,12 @@ public sealed partial class StrategicSupport {
   points=result.Points;length=result.Length;reliefRouteFailure=result.Failure;return result.Success;
  }
  static IEnumerable<string> ReliefPathSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result){
+  foreach(var phase in ReliefPathAvoidSteps(from,to,f,allowed,escape,result,null))yield return phase;
+ }
+ static IEnumerable<string> ReliefPathAvoidSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result,Func<List<Vector3>,bool> passage){
   result.Success=false;result.Failure="native-route-or-territory";
   var generation=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;string key=RoadCacheKey(from,to,f,allowed,escape),stamp=RoadPolicyStamp(f);
-  if(roadChoices.TryGetValue(key,out var cached)&&cached.World==generation&&cached.Stamp==stamp&&cached.Until>Environment.TickCount64){
+  if(passage==null&&roadChoices.TryGetValue(key,out var cached)&&cached.World==generation&&cached.Stamp==stamp&&cached.Until>Environment.TickCount64){
    var at=from;var replay=new RoutePlan{Success=true};
    foreach(var end in cached.Legs){
     var leg=new RoutePlan();foreach(var phase in ReliefPathCoreSteps(at,end,f,allowed,escape&&at.Equals(from),null,leg)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;}
@@ -45,6 +48,7 @@ public sealed partial class StrategicSupport {
    roadChoices.Remove(key);
   }
   var direct=new RoutePlan();foreach(var phase in ReliefPathCoreSteps(from,to,f,allowed,escape,null,direct)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;}
+  if(direct.Success&&passage!=null&&!passage(direct.Points))direct.Success=false;
   if(direct.Success){direct.Legs.Add(to);CopyRoad(result,direct);}
   var origin=AOHIBKLOAEI.PNKKPMCJIGA(from);var destination=AOHIBKLOAEI.PNKKPMCJIGA(to);
   if(origin!=null&&destination!=null&&origin.Pointer!=destination.Pointer){
@@ -62,7 +66,7 @@ public sealed partial class StrategicSupport {
      var leg=new RoutePlan();var end=neighbor.Pointer==destination.Pointer?to:neighbor.BMBMKPGEHBH;
      var begin=last.Pointer==origin.Pointer?from:last.BMBMKPGEHBH;
      foreach(var phase in ReliefPathCoreSteps(begin,end,f,allowed,escape&&last.Pointer==origin.Pointer,null,leg)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation){result.Success=false;yield break;}}
-     if(!leg.Success)continue;double distance=current.Length+leg.Length;
+     if(!leg.Success||passage!=null&&!passage(leg.Points))continue;double distance=current.Length+leg.Length;
      if(result.Success&&distance>=result.Length-.001||plans.TryGetValue(neighbor.Pointer,out var old)&&old.Length<=distance)continue;
      var candidate=new RoutePlan{Success=true,Length=current.Length,Points=new(current.Points),Legs=new(current.Legs)};AppendRoad(candidate,leg);candidate.Legs.Add(end);
      plans[neighbor.Pointer]=candidate;if(!open.Any(c=>c.Pointer==neighbor.Pointer))open.Add(neighbor);
@@ -70,7 +74,7 @@ public sealed partial class StrategicSupport {
    }
   }
   if(RoadPolicyStamp(f)!=stamp){result.Success=false;yield break;}
-  if(result.Success){if(direct.Success&&result.Length+.01<direct.Length&&Gate("road-improved:"+key,15))Note($"road-shortest-improved faction={f.IBGCLCAIBOL} from={origin?.OJPECMNINNA} to={destination?.OJPECMNINNA} presetLength={direct.Length:F2} shortestLength={result.Length:F2} legs={result.Legs.Count} basis=native-road-graph");result.Failure="validated-shortest-native-road-graph";if(roadChoices.Count>=2048)roadChoices.Clear();roadChoices[key]=new RoadChoice{World=generation,Stamp=stamp,Until=Environment.TickCount64+3000,Length=result.Length,Legs=new(result.Legs)};}
+  if(result.Success){if(direct.Success&&result.Length+.01<direct.Length&&Gate("road-improved:"+key,15))Note($"road-shortest-improved faction={f.IBGCLCAIBOL} from={origin?.OJPECMNINNA} to={destination?.OJPECMNINNA} presetLength={direct.Length:F2} shortestLength={result.Length:F2} legs={result.Legs.Count} basis=native-road-graph");result.Failure="validated-shortest-native-road-graph";if(passage==null){if(roadChoices.Count>=2048)roadChoices.Clear();roadChoices[key]=new RoadChoice{World=generation,Stamp=stamp,Until=Environment.TickCount64+3000,Length=result.Length,Legs=new(result.Legs)};}}
  }
  static IEnumerable<string> ReliefPathCoreSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,List<Vector3> forcedLegs,RoutePlan result){
   result.Success=false;var points=new List<Vector3>();double length=0;var generation=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;var origin=AOHIBKLOAEI.PNKKPMCJIGA(from);var dest=AOHIBKLOAEI.PNKKPMCJIGA(to);
@@ -100,7 +104,12 @@ public sealed partial class StrategicSupport {
   if(!t||t.m_warInfo!=null||t.m_isPrivate||t.m_responseToPlayer||t.IncludePlayer())return false;
   Vector3 end=war!=null?war.GBHGENNMJCK:target.BMBMKPGEHBH;
   string allowed=war!=null?BattleTransitRegion(war,f):!enter&&target?.LMPMNLLGOEC!=null&&AttackableOwner(f,target.LMPMNLLGOEC.LMMNKIOAGLC)?target.OJPECMNINNA:null;
-  if(!ReliefPath(t.GetPosition(),end,f,allowed,escape,out var points,out double length))return false;
+  List<Vector3> points;double length;
+  if(war!=null){
+   if(missions.TryGetValue(t.Pointer,out var planned)&&ValidMission(planned)&&Same(planned.War,war)&&TrimCorridorRoad(t.GetPosition(),planned.PlannedRoad,out points)&&FirstCorridorBlock(points,war,f)==null)length=CorridorLength(points);
+   else if(!PreparedBattlePath(t.GetPosition(),war,f,escape,out points,out length))return false;
+  }
+  else if(!ReliefPath(t.GetPosition(),end,f,allowed,escape,out points,out length))return false;
   if(war!=null)t.MoveToWarInfo(war,false);
   else {if(!ICGAEMLACJG.FKKCPDEFODO.TryGetValue(target.OJPECMNINNA,out var ctrl)||!ctrl)return false;t.MoveToCity(ctrl,enter,false);}
   if(t.m_deployState!=AKOPKFPKJPP.Expedition||t.m_listMovePos==null)return false;
@@ -118,7 +127,7 @@ public sealed partial class StrategicSupport {
   }else if(coverOrders.TryGetValue(t.Pointer,out var cover)&&ValidCover(cover)&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(cover.Target,out var target)){
    cover.Routed=MoveRelief(t,target,null,false,f);if(!cover.Routed)t.StartCamp();
   }else if(missions.TryGetValue(t.Pointer,out var m)&&ValidMission(m)){
-   if(!MoveRelief(t,m.War.IJGLCFJOOIK,m.War,false,f)){t.StartCamp();Note($"battle-route-install-failed team={t.m_id} war={m.Name}");}
+   if(!MoveRelief(t,m.War.IJGLCFJOOIK,m.War,false,f)){t.StartCamp();work.Add("battle-route:reroute:"+t.m_id,()=>RepairCorridorSteps(t,m,f).GetEnumerator());Note($"battle-route-install-failed team={t.m_id} war={m.Name} repairQueued=true");}
   }
  }
  static void RestoreCampaignDeparture(Wo_DeployTeamCtrl t,MKMOJNAJKJE f){

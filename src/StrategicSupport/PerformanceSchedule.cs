@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -18,28 +18,26 @@ public sealed partial class StrategicSupport
 {
  static readonly WorkQueue work=new();static bool schedulerOnline,pumping;
  static ConfigEntry<float> workBudget;
- static double windowMaxFrame,windowMaxWork,windowWorkTotal,windowNativeCity,windowNativePlan;
- static int windowFrames,windowSteps,windowPlanCalls;static long reportAt,lastPump;
- static string slowestWork="none";
- static long windowStarted;static double windowPumpTotal,windowPumpMax,previousPumpMs,gapPrecedingPumpMs;
- static int windowLongGaps,windowOverBudget;
  void ConfigurePerformance(){
   workBudget=Config.Bind("Performance","BudgetMilliseconds",2f,new ConfigDescription("Soft main-thread AI work budget per frame. Native calls cannot be interrupted; unfinished work continues next frame.",new AcceptableValueRange<float>(0.5f,8f)));
   AsyncJournal.Start(Path.Combine(Paths.BepInExRootPath,"StrategicSupport-investment.log"));
  }
- void StartPerformance(Harmony h){
+ void StartWorkScheduler(){
   schedulerOnline=AddComponent<AIWorkDriver>()!=null;
-  HarmonyMethod H(string n)=>new HarmonyMethod(typeof(StrategicSupport),n);
-  h.Patch(AccessTools.Method(typeof(AFAGFHJONFJ),"JFOOAMEIMDO"),prefix:H(nameof(BeginNativeCityTiming)),finalizer:H(nameof(EndNativeCityTiming)));
-  h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"GHNEGBJANJG"),prefix:H(nameof(BeginNativePlanTiming)),finalizer:H(nameof(EndNativePlanTiming)));
-  Note("ai-scheduler online="+schedulerOnline+" budgetMs="+workBudget.Value+" logging=background-batched");
+  Note("ai-scheduler online="+schedulerOnline+" budgetMs="+workBudget.Value+" performanceRecording=false actionLogging=background-batched");
  }
- static void BeginNativeCityTiming(out long __state){__state=Stopwatch.GetTimestamp();}
- static void EndNativeCityTiming(long __state){windowNativeCity=Math.Max(windowNativeCity,(Stopwatch.GetTimestamp()-__state)*1000d/Stopwatch.Frequency);}
- static void BeginNativePlanTiming(out long __state){windowPlanCalls++;__state=Stopwatch.GetTimestamp();}
- static void EndNativePlanTiming(FNFJODHIJFO __instance,long __state){if(__instance!=null&&Gate("native-plan-audit:"+__instance.Pointer,60))Note($"native-plan faction={__instance.LMMNKIOAGLC} policy={__instance.BNGFJOAJKDH} ms={(Stopwatch.GetTimestamp()-__state)*1000d/Stopwatch.Frequency:F2}");windowNativePlan=Math.Max(windowNativePlan,(Stopwatch.GetTimestamp()-__state)*1000d/Stopwatch.Frequency);}
  static readonly Dictionary<string,(double Day,IntPtr City,string Owner,string Governor)> cityAdmissions=new();
- static void ResetWork(){work.Clear();coverPlanning.Clear();decisionStamps.Clear();foreach(var key in aiGatePeriods.Keys)next.Remove(key);aiGatePeriods.Clear();cityAdmissions.Clear();}
+ sealed class ConstructionVisit {public IntPtr City;public string Owner,Governor;public double Day;public int Remaining;}
+ static readonly Dictionary<string,ConstructionVisit> constructionVisits=new();
+ static void OpenConstructionVisit(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor){
+  double day=Math.Floor((double)NEINKOOBJIH.MIPFHCKDJOK);
+  if(constructionVisits.TryGetValue(c.OJPECMNINNA,out var old)&&old.City==c.Pointer&&old.Owner==f.IBGCLCAIBOL&&old.Governor==governor){
+   if(day>=old.Day&&day-old.Day<DecisionDays(f.IBGCLCAIBOL))return;
+   old.Day=day;old.Remaining=buildsPerCity.Value;return;
+  }
+  constructionVisits[c.OJPECMNINNA]=new(){City=c.Pointer,Owner=f.IBGCLCAIBOL,Governor=governor,Day=day,Remaining=buildsPerCity.Value};
+ }
+ static void ResetWork(){work.Clear();constructionVisits.Clear();coverPlanning.Clear();decisionStamps.Clear();foreach(var key in aiGatePeriods.Keys)next.Remove(key);aiGatePeriods.Clear();cityAdmissions.Clear();}
  static bool CurrentCity(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor)=>c!=null&&f!=null&&c.LMPMNLLGOEC?.LMMNKIOAGLC==f.IBGCLCAIBOL
   &&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(c.OJPECMNINNA,out var registered)&&registered?.Pointer==c.Pointer
   &&c.LMPMNLLGOEC.IPJHOOJBCKI==governor&&Eligible(c,out var current)&&current.Pointer==f.Pointer&&!c.GKLIEHCHDLD();
@@ -57,30 +55,32 @@ public sealed partial class StrategicSupport
  static void ScheduleFaction(MKMOJNAJKJE f){if(f!=null)ScheduleStaffing(f);if(f!=null&&DecisionDue("faction:"+f.IBGCLCAIBOL,f.IBGCLCAIBOL,f.Pointer,"",false)&&work.Add("faction:"+f.IBGCLCAIBOL,()=>FactionWork(f)))DecisionDue("faction:"+f.IBGCLCAIBOL,f.IBGCLCAIBOL,f.Pointer,"",true);}
  static IEnumerator<string> CityWork(AFAGFHJONFJ c){
   if(!Ready()||c?.LMPMNLLGOEC==null||!NEINKOOBJIH.COCMABJFOFH.TryGetValue(c.LMPMNLLGOEC.LMMNKIOAGLC,out var f)||f==null)yield break;
-  // National strategy is independent of city delegation, even for manual cities.
   ScheduleFaction(f);string governor=c.LMPMNLLGOEC.IPJHOOJBCKI;
-  foreach(var phase in SafePhases(CapacityTransferSteps(c,f)))yield return phase;
+  work.Add("capacity-emergency:"+c.OJPECMNINNA,()=>SafePhases(CapacityTransferSteps(c,f)).GetEnumerator());
   if(!CurrentCity(c,f,governor)){InvestmentAudit(c,"excluded:"+Eligibility(c,out _));yield break;}
-  if(!CurrentCity(c,f,governor))yield break;
-  using(var attack=OffensiveSteps(c,f,governor).GetEnumerator())while(true){
-   bool more;try{more=attack.MoveNext();}catch(Exception e){Error(e);break;}
-   if(!more)break;yield return attack.Current;
-   if(!CurrentCity(c,f,governor))yield break;
-  }
-  bool invest=investment.Value&&AIGate("invest:"+c.OJPECMNINNA,f.IBGCLCAIBOL,2);
-  if(invest){
-   AuditCapacity(c,"work-start");
-   if(CurrentCity(c,f,governor)){
-    // Diagnostics are independent yielded work, never a prerequisite for spending.
-    work.Add("income:"+c.OJPECMNINNA,()=>SafePhases(AuditCityIncomeSteps(c,f)).GetEnumerator());
-    AuditDevelopmentAgenda(c,f);
-   }yield return "development-audit";
-   if(!CurrentCity(c,f,governor))yield break;
+  work.Add("city-offense:"+c.OJPECMNINNA,()=>SafePhases(OffensiveSteps(c,f,governor)).GetEnumerator());
+  if(investment.Value&&AIGate("invest:"+c.OJPECMNINNA,f.IBGCLCAIBOL,2)){
+   OpenConstructionVisit(c,f,governor);
+   work.Add("income:"+c.OJPECMNINNA,()=>SafePhases(AuditCityIncomeSteps(c,f)).GetEnumerator());
+   work.Add("economy:research:"+c.OJPECMNINNA,()=>CityResearchWork(c,f,governor));
+   work.Add("economy:maintenance:"+c.OJPECMNINNA,()=>CityMaintenanceWork(c,f,governor));
+   ScheduleConstruction(c,f,governor);
+   // Goal-driven demolition has its own slot; a long vacant-plot search or
+   // an existing cached construction plan cannot suppress redevelopment.
+   work.Add("economy:renewal:"+c.OJPECMNINNA,()=>CityRenewalWork(c,f,governor));
+   AuditDevelopmentAgenda(c,f);
    var row=c.LMPMNLLGOEC;
    if(budget.Value&&row.KJPPGIOCDID!=null&&row.KJPPGIOCDID.Count<c.JNLIOIHLDHH()&&row.PNHICLAGHGD>0){
     Fund(c,true);if(row.DNOGPFHMOMO>=50001&&AIGate("staff-invest:"+c.OJPECMNINNA,f.IBGCLCAIBOL,10))c.OBIOEOJAHMM();
-   }yield return "staffing";
-   if(!CurrentCity(c,f,governor))yield break;
+   }
+  }
+  ScheduleStaffing(f);yield return "city-admitted";
+  if(CurrentCity(c,f,governor)&&domestic.Value&&AIGate("domestic:"+c.OJPECMNINNA,f.IBGCLCAIBOL,30)&&DayReady("domestic:"+c.OJPECMNINNA,DecisionDays(f.IBGCLCAIBOL))){
+   DayReady("domestic:"+c.OJPECMNINNA,0,true);AssignDomestic(c,f);
+  }yield return "domestic";
+ }
+ static IEnumerator<string> CityResearchWork(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor){
+  if(!Ready()||!investment.Value||!CurrentCity(c,f,governor))yield break;
    for(int pass=0;pass<4;pass++){
     if(!CurrentCity(c,f,governor))yield break;
     if(pass>0)next.Remove("research-invest:"+f.IBGCLCAIBOL+":"+governor);
@@ -90,31 +90,45 @@ public sealed partial class StrategicSupport
     if(f.DNOGPFHMOMO>=beforeResearch)break;
    }
    if(!CurrentCity(c,f,governor))yield break;
-   if(maintenance.Value){using(var steps=MaintenanceSteps(c,f).GetEnumerator())while(true){
+ }
+ static IEnumerator<string> CityMaintenanceWork(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor){
+  if(!Ready()||!investment.Value||!CurrentCity(c,f,governor))yield break;
+   if(maintenance.Value){using(var steps=ConstructionSlices(MaintenanceSteps(c,f)).GetEnumerator())while(true){
     bool more;try{more=steps.MoveNext();}catch(Exception e){Error(e);break;}if(!more)break;
     yield return steps.Current?"maintenance-commit":"maintenance-scan";if(!CurrentCity(c,f,governor))yield break;
    }}yield return "maintenance";
-   int built=0;
-   if(construction.Value)for(int n=0;n<buildsPerCity.Value;n++){
-    if(!CurrentCity(c,f,governor))yield break;
-    bool purchased=false;
-    using(var scan=ConstructionSlices(BuildSteps(c,f)).GetEnumerator())while(scan.MoveNext()){purchased|=scan.Current;yield return scan.Current?"build-commit":"build-scan";if(!CurrentCity(c,f,governor))yield break;}
-    if(!purchased)break;built++;
+ }
+ static void ScheduleConstruction(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor)=>work.Add("economy:construction:"+c.OJPECMNINNA,()=>CityConstructionWork(c,f,governor));
+ static void ScheduleLayout(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor)=>work.Add("layout:"+c.OJPECMNINNA,()=>CityLayoutWork(c,f,governor));
+ static IEnumerator<string> CityConstructionWork(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor){
+  if(!Ready()||!investment.Value||!construction.Value||!CurrentCity(c,f,governor))yield break;
+  if(!constructionVisits.TryGetValue(c.OJPECMNINNA,out var visit)||visit.City!=c.Pointer||visit.Owner!=f.IBGCLCAIBOL||visit.Governor!=governor)yield break;
+  int built=0;
+  for(int n=0;n<buildsPerCity.Value&&visit.Remaining>0;n++){
+   if(!investment.Value||!construction.Value||!CurrentCity(c,f,governor))yield break;
+   int result=ExecuteSavedLayout(c,f,out bool refresh);
+   if(refresh)ScheduleLayout(c,f,governor);
+   if(result!=1){
+    if(Gate("construction-wait:"+c.OJPECMNINNA,30))Note($"construction-wait city={c.OJPECMNINNA} state={(result==2?"plan-waiting-conditions":"awaiting-plan")} refresh={refresh} remainingAllowance={visit.Remaining} planned={(layoutIntents.TryGetValue(c.OJPECMNINNA,out var pending)?pending.Keys.Count:0)} treasury={f.DNOGPFHMOMO} cityCash={c.LMPMNLLGOEC.DNOGPFHMOMO}");
+    break;
    }
-   InvestmentAudit(c,$"evaluated built={built} treasury={f.DNOGPFHMOMO} cityCash={c.LMPMNLLGOEC.DNOGPFHMOMO} scheduled=true");
-   // Legal empty plots get serviced before the much larger rebuild search.
-   if(CurrentCity(c,f,governor)){
-    using(var renewal=ConstructionSlices(RenewalSteps(c,f)).GetEnumerator())while(renewal.MoveNext()){
-     yield return renewal.Current?"renewal-commit":"renewal-scan";if(!CurrentCity(c,f,governor))yield break;
-    }
-   }
-   AuditCapacity(c,"work-end");
-   if(!CurrentCity(c,f,governor))yield break;
-   ScheduleStaffing(f);yield return "garrison";
+   visit.Remaining--;built++;yield return "build-commit";
   }
-  if(CurrentCity(c,f,governor)&&domestic.Value&&AIGate("domestic:"+c.OJPECMNINNA,f.IBGCLCAIBOL,30)&&DayReady("domestic:"+c.OJPECMNINNA,DecisionDays(f.IBGCLCAIBOL))){
-   DayReady("domestic:"+c.OJPECMNINNA,0,true);AssignDomestic(c,f);
-  }yield return "domestic";
+  if(built>0)InvestmentAudit(c,$"evaluated built={built} treasury={f.DNOGPFHMOMO} cityCash={c.LMPMNLLGOEC.DNOGPFHMOMO} cachedPlan=true scheduled=true");
+ }
+ static IEnumerator<string> CityLayoutWork(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor){
+  if(!Ready()||!investment.Value||!construction.Value||!CurrentCity(c,f,governor))yield break;
+  if(Gate("layout-start:"+c.OJPECMNINNA,30))Note($"layout-job-start city={c.OJPECMNINNA} scheduling=reserved-economy-share");
+  using(var scan=ConstructionSlices(BuildScanSteps(c,f,true)).GetEnumerator())while(scan.MoveNext()){
+   yield return "layout-scan";if(!investment.Value||!construction.Value||!CurrentCity(c,f,governor))yield break;
+  }
+  if(layoutIntents.TryGetValue(c.OJPECMNINNA,out var plan)&&plan.Keys.Count>0)ScheduleConstruction(c,f,governor);
+ }
+ static IEnumerator<string> CityRenewalWork(AFAGFHJONFJ c,MKMOJNAJKJE f,string governor){
+  if(!Ready()||!investment.Value||!CurrentCity(c,f,governor))yield break;
+  using(var scan=ConstructionSlices(RenewalSteps(c,f)).GetEnumerator())while(scan.MoveNext()){
+   yield return scan.Current?"renewal-commit":"renewal-scan";if(!investment.Value||!CurrentCity(c,f,governor))yield break;
+  }
  }
  // Geometry searches yield for individual cells and the optimizer yields for
  // tiny candidate batches. Sending every such yield behind all world cities
@@ -164,10 +178,6 @@ public sealed partial class StrategicSupport
  }
  internal static void PumpEconomy(){
   if(!schedulerOnline||pumping)return;
-  long now=Environment.TickCount64;
-  if(windowStarted==0)windowStarted=now;
-  if(lastPump>0){double gap=now-lastPump;if(gap>windowMaxFrame){windowMaxFrame=gap;gapPrecedingPumpMs=previousPumpMs;}if(gap>=50)windowLongGaps++;}lastPump=now;windowFrames++;
-  long pumpStart=Stopwatch.GetTimestamp();
   try{
    pumping=true;
    SyncWorldVisuals();
@@ -177,25 +187,9 @@ public sealed partial class StrategicSupport
     if(campaignRunning){PollManualOrders();PollDefense();}
     // Cheap yielded probes previously hit the eight-step cap far below the
     // time budget, stretching a city scan into minutes on a populated map.
-    windowSteps+=work.Pump(workBudget.Value,128,(label,ms)=>{
-     RecordPhaseCost(label,ms);RecordPhaseAllocation(label,work.LastStepAllocatedBytes);
-     windowWorkTotal+=ms;if(ms>windowMaxWork){windowMaxWork=ms;slowestWork=label;}
-     if(ms>16&&Gate("slow-work:"+label,30))Note($"ai-slow work={label} ms={ms:F2} queue={work.Count}");
-    },Error,campaignRunning?null:CurrentBattleJob);
+    // Retain the frame budget and priority lanes without profiling game Update.
+    work.Pump(workBudget.Value,128,null,Error,campaignRunning?null:CurrentBattleJob);
    }
-  }catch(Exception e){Error(e);}finally{
-   previousPumpMs=(Stopwatch.GetTimestamp()-pumpStart)*1000d/Stopwatch.Frequency;
-   windowPumpTotal+=previousPumpMs;windowPumpMax=Math.Max(windowPumpMax,previousPumpMs);
-   if(previousPumpMs>workBudget.Value)windowOverBudget++;
-   pumping=false;
-  }
-  if(now>=reportAt){
-   reportAt=now+30000;
-   ReportPhaseCosts();
-   Note($"ai-perf frames={windowFrames} frameGapMaxMs={windowMaxFrame:F2} workSteps={windowSteps} workTotalMs={windowWorkTotal:F2} workMaxMs={windowMaxWork:F2} slowest={slowestWork} nativeCityMaxMs={windowNativeCity:F2} nativePlanMaxMs={windowNativePlan:F2} nativePlanCalls={windowPlanCalls} queue={work.Count} budgetMs={workBudget.Value:F2}");
-   Note($"ai-frame-cost elapsedMs={now-windowStarted} pumpTotalMs={windowPumpTotal:F2} pumpMaxMs={windowPumpMax:F2} overBudgetFrames={windowOverBudget} gaps50ms={windowLongGaps} longestGapPrecedingPumpMs={gapPrecedingPumpMs:F2} timeScale={Time.timeScale:F2} campaignPaused={AEHAGJAKNEK.PAKENCLGOHK} gameDay={NEINKOOBJIH.MIPFHCKDJOK:F4} note=frame-gaps-include-non-AI-work");
-   windowFrames=windowSteps=windowPlanCalls=0;windowMaxFrame=windowMaxWork=windowWorkTotal=windowNativeCity=windowNativePlan=0;slowestWork="none";
-   windowStarted=now;windowPumpTotal=windowPumpMax=gapPrecedingPumpMs=0;windowLongGaps=windowOverBudget=0;
-  }
+  }catch(Exception e){Error(e);}finally{pumping=false;}
  }
 }

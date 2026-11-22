@@ -22,10 +22,11 @@ public static class City78Tests {
   Setup();Overload();var damaged=Add(Def("damaged-market"));damaged.OGFAHJHBCNG=400;var basic=Def("barracks",2);var x=Add(basic);up=Def("high-barracks",3,"barracks");
   var rich=Def("rich-market",0,"damaged-market");rich.CNCPIILGDEF=10000;
   var cash=(long)f.DNOGPFHMOMO+c.LMPMNLLGOEC.DNOGPFHMOMO;
-  foreach(var step in (IEnumerable<bool>)Call("MaintenanceSteps",c,f)){}
+  bool capacityFirst=false;
+  foreach(var step in (IEnumerable<bool>)Call("MaintenanceSteps",c,f))if(step&&x.GEKKLMPLDHJ==up&&damaged.GEKKLMPLDHJ.OJPECMNINNA=="damaged-market")capacityFirst=true;
   Check(damaged.OGFAHJHBCNG==650&&x.GEKKLMPLDHJ==up,"repair and urgent capacity upgrade both happen in same visit");
-  Check(damaged.GEKKLMPLDHJ.OJPECMNINNA=="damaged-market","capacity upgrade beats lucrative optional economy upgrade");
-  Check(cash-f.DNOGPFHMOMO-c.LMPMNLLGOEC.DNOGPFHMOMO==638,"repair and upgrade each paid once");
+  Check(capacityFirst&&damaged.GEKKLMPLDHJ==rich,"capacity upgrade precedes optional economy upgrade within expanded batch");
+  Check(cash-f.DNOGPFHMOMO-c.LMPMNLLGOEC.DNOGPFHMOMO==1238,"repair and both upgrades each paid once");
   Setup();Overload();basic=Def("barracks",2);x=Add(basic);up=Def("high-barracks",3,"barracks");pending=Add(basic);pending.EMHNNCLBADE=0;
   foreach(var step in (IEnumerable<bool>)Call("MaintenanceSteps",c,f)){}
   Check(x.GEKKLMPLDHJ==basic,"unfinished capacity expansion prevents another optional upgrade");
