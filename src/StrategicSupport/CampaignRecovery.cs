@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -14,7 +14,7 @@ public sealed partial class StrategicSupport {
  static readonly Dictionary<IntPtr,CampaignGoal> campaignGoals=new();
  static bool CampaignControlled(Wo_DeployTeamCtrl t,out MKMOJNAJKJE f){
   f=null;
-  if(!t||ManualProtected(t)||defenseOrders.ContainsKey(t.Pointer)||coverOrders.ContainsKey(t.Pointer)||t.m_isPrivate||t.m_responseToPlayer||t.IncludePlayer()||t.m_isStarting||!NEINKOOBJIH.COCMABJFOFH.TryGetValue(t.m_belongPower??"",out f))return false;
+  if(!t||ManualProtected(t)||JointHuntOwned(t)||defenseOrders.ContainsKey(t.Pointer)||coverOrders.ContainsKey(t.Pointer)||t.m_isPrivate||t.m_responseToPlayer||t.IncludePlayer()||t.m_isStarting||!NEINKOOBJIH.COCMABJFOFH.TryGetValue(t.m_belongPower??"",out f))return false;
   if(campaignGoals.TryGetValue(t.Pointer,out var completed)&&completed.Id==t.m_id&&completed.Faction==t.m_belongPower&&completed.CompletedOrder)return true;
   if(MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(t.m_assembleCity??"",out var home)&&home.LMPMNLLGOEC?.LMMNKIOAGLC==t.m_belongPower)return DistributionCity(home,out _);
   // An army whose origin was conquered can still return. Protect personal armies.

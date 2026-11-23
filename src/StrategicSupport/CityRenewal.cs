@@ -17,7 +17,7 @@ public sealed partial class StrategicSupport
     }
     static bool RenewalVictim(AFAGFHJONFJ c,JNHOOCJJPJO d,OGABIJECHFG x,PABIPDOFBFG b)=>
         x?.GEKKLMPLDHJ!=null&&x.GEKKLMPLDHJ.MLAJLJKFGBD==b.MLAJLJKFGBD&&x.GEKKLMPLDHJ.PNPLBNAFMCM==b.PNPLBNAFMCM
-        &&(!RequiresStreet(b)||x.GEKKLMPLDHJ.FHKHHKBBKGM)&&RenewalProtected(c,d,x,b);
+        &&(!RequiresStreet(b)||x.GEKKLMPLDHJ.FHKHHKBBKGM)&&RenewalProtected(c,d,x,b)&&ReplacementGoalsSafe(c,d,new(){x},b);
     static bool RenewalProtected(AFAGFHJONFJ c,JNHOOCJJPJO d,OGABIJECHFG x,PABIPDOFBFG b){
         var a=x?.GEKKLMPLDHJ;
         if(a==null||!PublicBuilding(c,d,x)||!Completed(x)||OccupiedBuilding(x)||!a.KFCEGGHJGGB||a.POLCGKHKLHI||EconomicKind(a)==0
@@ -104,7 +104,7 @@ public sealed partial class StrategicSupport
             bool invalid=false;foreach(var g in completedGoals)if(!g.NHIPAJDALBA(c)){invalid=true;break;}
             if(invalid&&victim.GEKKLMPLDHJ?.OJPECMNINNA!=old.OJPECMNINNA){
                 try{victim.GMMDMPFFIGP(old.OJPECMNINNA,true);}finally{victim.EMHNNCLBADE=oldProgress;victim.OGFAHJHBCNG=oldHealth;}
-                throw new InvalidOperationException("Renewal invalidated completed goal; restored original");
+                throw new InvalidOperationException($"Renewal invalidated completed goal; restored original city={c.OJPECMNINNA} instance={id} old={old.OJPECMNINNA} replacement={target.OJPECMNINNA}");
             }
             if(error!=null)throw error;
         }

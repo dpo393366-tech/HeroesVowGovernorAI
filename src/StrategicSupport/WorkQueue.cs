@@ -22,7 +22,7 @@ public sealed class WorkQueue
   int count=queue.Count;while(count-->0){var next=queue.Dequeue();if(eligible==null||eligible(next.Key)){job=next;return true;}queue.Enqueue(next);}
   job=null;return false;
  }
- public int Pump(double budgetMs,int maxSteps,Action<string,double> measured,Action<Exception> error,Predicate<string> eligible=null){
+ public int Pump(double budgetMs,int maxSteps,Action<string,double> measured,Action<Exception> error,Predicate<string> eligible=null,Action<string,double> slow=null){
   long start=Stopwatch.GetTimestamp();int steps=0;
   while((jobs.Count>0||urgent.Count>0||service.Count>0||critical.Count+battlePlans.Count>0||recovery.Count>0||economy.Count>0||planning.Count>0||construction.Count>0)&&steps<maxSteps){
    // Two emergency slices then one ordinary slice: prompt defense without
@@ -55,7 +55,7 @@ public sealed class WorkQueue
    if(j.Recovery)recoveryGap=0;else recoveryGap=Math.Min(3,recoveryGap+1);
    if(j.Critical){}else if(useService)serviceGap=0;else {serviceGap=Math.Min(3,serviceGap+1);if(!j.Recovery)urgentStreak=useUrgent?urgentStreak+1:0;}
    long allocated=measured!=null?GC.GetAllocatedBytesForCurrentThread():0;
-   bool more=false;long at=measured!=null?Stopwatch.GetTimestamp():0;string stage="end";
+   bool more=false;long at=measured!=null||slow!=null?Stopwatch.GetTimestamp():0;string stage="end";
    bool previousStep=InStep;StepToken++;InStep=true;
    try{more=j.Steps.MoveNext();if(more)stage=j.Steps.Current;}catch(Exception e){error(e);}finally{InStep=previousStep;}
    LastStepAllocatedBytes=0;
@@ -64,6 +64,7 @@ public sealed class WorkQueue
     LastStepAllocatedBytes=Math.Max(0,GC.GetAllocatedBytesForCurrentThread()-allocated);
     measured(j.Key+"/"+stage,elapsed);
    }
+   if(slow!=null){double elapsed=(Stopwatch.GetTimestamp()-at)*1000d/Stopwatch.Frequency;if(elapsed>=8)slow(j.Key+"/"+stage,elapsed);}
    steps++;
    if(more&&j.Generation==generation)Enqueue(j);
    else {if(j.Generation==generation)keys.Remove(j.Key);try{j.Steps.Dispose();}catch(Exception e){error(e);}}

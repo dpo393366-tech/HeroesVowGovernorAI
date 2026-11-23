@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
@@ -34,7 +34,7 @@ public class OGABIJECHFG:Native{
  public List<string>JMIADAFPGMC=new(),HNEPDNGMAIL=new();public List<OGABIJECHFG>GJLBKJOONCF=new();
  public bool EHABIIDOKGC()=>EMHNNCLBADE<BNMEOOJPOML;
  public void OHILNFOEADD(int n){OGFAHJHBCNG=(int)Math.Clamp((long)OGFAHJHBCNG+n,0,GEKKLMPLDHJ.OGFAHJHBCNG);if(ThrowRepair)throw new Exception("repair post-change failure");}
- public void GMMDMPFFIGP(string id,bool complete){if(ThrowBeforeUpgrade)throw new Exception("upgrade pre-change failure");GEKKLMPLDHJ=AEHAGJAKNEK.ACIGFKMDOKE[id];EMHNNCLBADE=complete?100:0;if(ThrowAfterUpgrade)throw new Exception("upgrade post-change failure");}
+ public static int NativeRenewalCalls146;public void GMMDMPFFIGP(string id,bool complete){NativeRenewalCalls146++;if(ThrowBeforeUpgrade)throw new Exception("upgrade pre-change failure");GEKKLMPLDHJ=AEHAGJAKNEK.ACIGFKMDOKE[id];EMHNNCLBADE=complete?100:0;if(ThrowAfterUpgrade)throw new Exception("upgrade post-change failure");}
 }
 public class FEEDONDCELP:Native{
  public UnityEngine.Vector3 BJHLIMBCBNN;public int HFBAJIGHOAF,PAHKDHJPFKD,GHMMBOIKHNC,FCOJFBEHMAG=-9999,PMGDGAAICCG,FPOIMBFMEDH,FGHAPGBJINB;public bool ICGFBPCAJCI;public JNHOOCJJPJO GMIKIMACDBC;

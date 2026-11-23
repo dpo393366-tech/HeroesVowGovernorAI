@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using HarmonyLib;
 
@@ -11,7 +11,7 @@ public sealed partial class StrategicSupport
     }
     static bool HasDirectedMovement(Wo_DeployTeamCtrl t)
     {
-        if(t.m_isEnterCity||t.m_targetWarInfo!=null||OtherCampaignOrder(t))return true;
+        if(JointHuntOwned(t)||t.m_isEnterCity||t.m_targetWarInfo!=null||OtherCampaignOrder(t))return true;
         if(missions.TryGetValue(t.Pointer,out var mission)&&ValidMission(mission))return true;
         if(defenseOrders.TryGetValue(t.Pointer,out var defense)&&SameDefense(defense))return true;
         if(coverOrders.TryGetValue(t.Pointer,out var cover)&&ValidCover(cover))return true;
@@ -25,7 +25,7 @@ public sealed partial class StrategicSupport
         var original=__instance.GIGPDOPDGLM;
         var filtered=new Il2CppSystem.Collections.Generic.List<Wo_DeployTeamCtrl>();
         foreach(var t in original.ToArray()){
-            if(!t||ManualProtected(t))continue;
+            if(!t||ManualProtected(t)||JointHuntOwned(t))continue;
             if(t.m_deployState!=AKOPKFPKJPP.Expedition){filtered.Add(t);continue;}
             bool valid=!string.IsNullOrEmpty(t.m_targetCity)&&MICGPAMNDKM.IJPKEMPIFIH.TryGetValue(t.m_targetCity,out var city)&&city!=null;
             bool directed=HasDirectedMovement(t);
@@ -59,7 +59,7 @@ public sealed partial class StrategicSupport
     }
 
     static bool NativeResponseRefreshAllowed(Wo_DeployTeamCtrl t){
-        if(!t||ManualProtected(t))return false;
+        if(!t||ManualProtected(t)||JointHuntOwned(t))return false;
         if(t.m_isPrivate||t.IncludePlayer())return true;
         RepairOrphanResponse(t);
         if(!t.m_responseToPlayer)return false;

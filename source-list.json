@@ -1,4 +1,4 @@
-{
+﻿{
   "StrategicSupport": [
     "StrategicSupport.cs",
     "NativeInterception.cs",
@@ -103,7 +103,8 @@
     "BattleCorridors.cs",
     "WallConstruction.cs",
     "OffenseMarchSafety.cs",
-    "AttackRoadPreparation.cs"
+    "AttackRoadPreparation.cs",
+    "JointHunt.cs"
   ],
   "StrategicSupportTests": [
     "IntegrationTests.cs",
@@ -192,7 +193,10 @@
     "Intercept138Tests.cs",
     "Offense141Tests.cs",
     "Cold142Tests.cs",
-    "Roads143Tests.cs"
+    "Roads143Tests.cs",
+    "Manual144Tests.cs",
+    "Joint145Tests.cs",
+    "Perf146Tests.cs"
   ],
   "TreasuryAwards": [
     "TreasuryAwards.cs",

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
@@ -36,7 +36,7 @@ public sealed partial class StrategicSupport
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"LeaveCity"),postfix:H(nameof(RecordAttackDeparture)));
   h.Patch(AccessTools.Method(typeof(Wa_ArmyCtrl),"DrawNavigationPath"),prefix:H(nameof(BeforeArmyNavigationDrawing)));
  }
- static void ResetOffense(){failedCombatProbes.Clear();attackOrders.Clear();attackPlanning.Clear();attackPlanningCosts.Clear();huntMusters.Clear();huntPowerSamples.Clear();}
+ static void ResetOffense(){failedCombatProbes.Clear();attackOrders.Clear();attackPlanning.Clear();attackPlanningCosts.Clear();huntMusters.Clear();huntPowerSamples.Clear();jointHunts.Clear();}
  static bool SameAttack(AttackOrder o)=>o.Team&&o.Team.m_id==o.Id&&o.Team.m_belongPower==o.Faction&&o.Team.m_assembleCity==o.City&&o.Team.m_targetCity==o.Target&&!o.Team.m_isEnterCity;
  static int OffenseCashReserve(MKMOJNAJKJE f){
   if(f==null||offensive?.Value!=true)return 0;
@@ -247,6 +247,10 @@ public sealed partial class StrategicSupport
  }
  static bool GuardAttackStart(Wo_DeployTeamCtrl __instance){
   if(__instance==null)return true;
+  // A synchronous player override must clear stale AI intent before any
+  // automatic cancellation guard, not in the StartDeploy postfix afterward.
+  AfterManualTeamCommand(__instance);
+  if(ManualProtected(__instance))return true;
   if(!GuardFailedIntercept(__instance))return false;
   if(!GuardHuntStart(__instance))return false;
   if(!GuardCapacityTransfer(__instance))return false;

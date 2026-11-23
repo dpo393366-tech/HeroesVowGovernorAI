@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -176,6 +176,11 @@ public sealed partial class StrategicSupport
    ||(key.StartsWith("supply-route:")&&key.Contains(":"+w.Pointer+":"+w.HIENOINGBCN+":"))
    ||key.StartsWith("threat-route:")||key.StartsWith("defense-cover:");
  }
+ // Sparse managed-scheduler diagnostics only: no hooks on native game Update,
+ // no allocation census, and no per-step text/file writes. Existing async log.
+ static void SlowWorkSlice(string phase,double elapsed){
+  if(Gate("work-slice-overrun",5))Note($"work-slice-overrun stage={phase} cpuMs={elapsed:F2} queued={work.Count} frameBudgetMs={workBudget.Value:F2} nativeCallMayBeIndivisible=true");
+ }
  internal static void PumpEconomy(){
   if(!schedulerOnline||pumping)return;
   try{
@@ -188,7 +193,7 @@ public sealed partial class StrategicSupport
     // Cheap yielded probes previously hit the eight-step cap far below the
     // time budget, stretching a city scan into minutes on a populated map.
     // Retain the frame budget and priority lanes without profiling game Update.
-    work.Pump(workBudget.Value,128,null,Error,campaignRunning?null:CurrentBattleJob);
+    work.Pump(workBudget.Value,128,null,Error,campaignRunning?null:CurrentBattleJob,SlowWorkSlice);
    }
   }catch(Exception e){Error(e);}finally{pumping=false;}
  }

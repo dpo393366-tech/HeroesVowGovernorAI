@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -38,6 +38,11 @@ public sealed partial class StrategicSupport {
   int remaining=0;foreach(var district in c.FGBLEMGGOPO)if(district?.AIMLPNBOIIF!=null)foreach(var x in district.AIMLPNBOIIF)
    if(x?.GEKKLMPLDHJ!=null&&EconomicKind(x.GEKKLMPLDHJ)!=0&&!removed.Any(v=>v.Pointer==x.Pointer))remaining++;
   if(remaining==0&&EconomicKind(b)==0)return false;
+  return ReplacementGoalsSafe(c,d,removed,b);
+ }
+ // Same-size renewal and joined-parcel rebuilding must use the SAME native
+ // completed-goal rules, including zero output while replacement is building.
+ static bool ReplacementGoalsSafe(AFAGFHJONFJ c,JNHOOCJJPJO d,List<OGABIJECHFG> removed,PABIPDOFBFG b){
   if(c.HFLAGGEFBOO!=null)foreach(var goal in c.HFLAGGEFBOO){if(goal?.CKIJPJFFFOA==null)continue;bool preserveNow=goal.NHIPAJDALBA(c);foreach(var q in goal.CKIJPJFFFOA){if(q==null)continue;
    double loss=0,current=0;bool aggregate=true;
    switch(q.HFBAJIGHOAF){

@@ -23,13 +23,45 @@ public sealed partial class StrategicSupport {
  // Planning callers consume one native territory sample per scheduler slice.
  // Final native command validation drains the exact same checks synchronously.
  static bool ReliefPath(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,out List<Vector3> points,out double length){
-  var result=new RoutePlan();foreach(var phase in ReliefPathAvoidSteps(from,to,f,allowed,escape,result,null,false)){}
+  var result=new RoutePlan();foreach(var phase in ReliefPathAvoidSteps(from,to,f,allowed,escape,result,null)){}
+  // Only the selected route needs a fresh native physical check. Searching
+  // every alternative again here defeated the fixed-road cache on each order.
+  if(result.Success){
+   var verified=new RoutePlan{Success=true};var at=from;string stamp=RoadPolicyStamp(f);
+   foreach(var end in result.Legs){
+    var leg=new RoutePlan();foreach(var phase in ReliefPathCoreSteps(at,end,f,allowed,escape&&at.Equals(from),null,leg,false)){}
+    if(!leg.Success){verified.Success=false;break;}AppendRoad(verified,leg);verified.Legs.Add(end);at=end;
+   }
+   if(RoadPolicyStamp(f)!=stamp)verified.Success=false;
+   if(!verified.Success)roadChoices.Remove(RoadCacheKey(from,to,f,allowed,escape));
+   CopyRoad(result,verified);
+  }
   points=result.Points;length=result.Length;reliefRouteFailure=result.Failure;return result.Success;
  }
  static IEnumerable<string> ReliefPathSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result){
   foreach(var phase in ReliefPathAvoidSteps(from,to,f,allowed,escape,result,null))yield return phase;
  }
  static IEnumerable<string> ReliefPathAvoidSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result,Func<List<Vector3>,bool> passage,bool reuseGeometry=true){
+  // Coalesce cheap, read-only graph nodes. Preserve the policy observation
+  // boundary and yield BEFORE each native path query. No commands run here.
+  // The outer queue still owns the unchanged frame budget and lane fairness.
+  using var steps=ReliefPathSearchSteps(from,to,f,allowed,escape,result,passage,reuseGeometry).GetEnumerator();
+  while(true){
+   long started=System.Diagnostics.Stopwatch.GetTimestamp();int count=0;string phase=null;
+   while(count<16){
+    if(!steps.MoveNext())yield break;phase=steps.Current;count++;
+    if(phase!="route-graph"||(System.Diagnostics.Stopwatch.GetTimestamp()-started)*1000d/System.Diagnostics.Stopwatch.Frequency>=.2)break;
+   }
+   yield return phase;
+  }
+ }
+ sealed class RoadSearchNode {public double Length;public RoadSearchNode Previous;public RoutePlan Leg;public Vector3 End;}
+ static RoutePlan CompleteRoad(RoadSearchNode node,Vector3 from){
+  var chain=new Stack<RoadSearchNode>();for(var at=node;at.Previous!=null;at=at.Previous)chain.Push(at);
+  var road=new RoutePlan{Success=true,Points=new(){from}};
+  while(chain.Count>0){var step=chain.Pop();AppendRoad(road,step.Leg);road.Legs.Add(step.End);}return road;
+ }
+ static IEnumerable<string> ReliefPathSearchSteps(Vector3 from,Vector3 to,MKMOJNAJKJE f,string allowed,bool escape,RoutePlan result,Func<List<Vector3>,bool> passage,bool reuseGeometry){
   result.Success=false;result.Failure="native-route-or-territory";
   var generation=MICGPAMNDKM.IJPKEMPIFIH?.Pointer;string key=RoadCacheKey(from,to,f,allowed,escape),stamp=RoadPolicyStamp(f);
   yield return "route-policy";if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation)yield break;
@@ -55,12 +87,13 @@ public sealed partial class StrategicSupport {
   if(origin!=null&&destination!=null&&origin.Pointer!=destination.Pointer){
    bool Friendly(AFAGFHJONFJ c){string owner=c?.LMPMNLLGOEC?.LMMNKIOAGLC;return c!=null&&(string.IsNullOrEmpty(owner)||owner==f.IBGCLCAIBOL||(f.AENJACOFBJK.TryGetValue(owner,out var rel)&&rel!=null&&(rel.EBIOPDHEBOF==BHBNKONCOJD.Ally||rel.EBIOPDHEBOF==BHBNKONCOJD.ArmyPass)));}
    var open=new List<AFAGFHJONFJ>{origin};var settled=new HashSet<IntPtr>();
-   var plans=new Dictionary<IntPtr,RoutePlan>{{origin.Pointer,new RoutePlan{Success=true,Length=0,Points=new(){from}}}};
+   var plans=new Dictionary<IntPtr,RoadSearchNode>{{origin.Pointer,new RoadSearchNode{Length=0}}};
    while(open.Count>0){
     yield return "route-graph";if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation){result.Success=false;yield break;}
-    var last=open.OrderBy(c=>plans[c.Pointer].Length).First();open.Remove(last);if(!settled.Add(last.Pointer))continue;
+    int best=0;for(int i=1;i<open.Count;i++)if(plans[open[i].Pointer].Length<plans[open[best].Pointer].Length)best=i;
+    var last=open[best];open.RemoveAt(best);if(!settled.Add(last.Pointer))continue;
     var current=plans[last.Pointer];if(result.Success&&current.Length>=result.Length-.001)break;
-    if(last.Pointer==destination.Pointer){CopyRoad(result,current);break;}
+    if(last.Pointer==destination.Pointer){CopyRoad(result,CompleteRoad(current,from));break;}
     if(last.FKMKGNPFLFP==null)continue;
     foreach(var neighbor in last.FKMKGNPFLFP.ToArray()){
      if(neighbor==null||settled.Contains(neighbor.Pointer)||(!Friendly(neighbor)&&neighbor.Pointer!=destination.Pointer))continue;
@@ -69,7 +102,7 @@ public sealed partial class StrategicSupport {
      foreach(var phase in ReliefPathCoreSteps(begin,end,f,allowed,escape&&last.Pointer==origin.Pointer,null,leg,reuseGeometry)){yield return phase;if(MICGPAMNDKM.IJPKEMPIFIH?.Pointer!=generation){result.Success=false;yield break;}}
      if(!leg.Success||passage!=null&&!passage(leg.Points))continue;double distance=current.Length+leg.Length;
      if(result.Success&&distance>=result.Length-.001||plans.TryGetValue(neighbor.Pointer,out var old)&&old.Length<=distance)continue;
-     var candidate=new RoutePlan{Success=true,Length=current.Length,Points=new(current.Points),Legs=new(current.Legs)};AppendRoad(candidate,leg);candidate.Legs.Add(end);
+     var candidate=new RoadSearchNode{Length=distance,Previous=current,Leg=leg,End=end};
      plans[neighbor.Pointer]=candidate;if(!open.Any(c=>c.Pointer==neighbor.Pointer))open.Add(neighbor);
     }
    }
@@ -119,6 +152,7 @@ public sealed partial class StrategicSupport {
  }
  static void RouteNewRelief(Wo_DeployTeamCtrl t){
   if(!t||ManualProtected(t)||!NEINKOOBJIH.COCMABJFOFH.TryGetValue(t.m_belongPower,out var f))return;
+  if(huntOrders.TryGetValue(t.Pointer,out var joint)&&joint.Id==t.m_id&&joint.Joint!=null){RouteJointHunt(joint);return;}
   RestoreCampaignDeparture(t,f);
   if(t.m_deployState!=AKOPKFPKJPP.Expedition)return;
   if(fieldReliefOrders.ContainsKey(t.Pointer)){RouteFieldDeparture(t);return;}

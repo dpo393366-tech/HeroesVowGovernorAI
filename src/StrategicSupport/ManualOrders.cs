@@ -7,7 +7,7 @@ using DeployConfirmation=UI_DeployUI.GMPKDAEEJMK;
 
 public sealed partial class StrategicSupport {
  const string ManualPrefix="local.heroesvow.governor/manual/v1/";
- [ThreadStatic] static int manualInputDepth,manualGovernorDepth;
+ [ThreadStatic] static int manualInputDepth,manualGovernorDepth,manualDeployDepth;
  static bool ManualAIGeneration=>pumping||WorkQueue.InStep||manualGovernorDepth>0||governorStaffing>0||researchOwner!=null;
  static readonly Dictionary<string,CLAGKDECFID> manualHeroes=new();
  static readonly Dictionary<int,Wo_DeployTeamCtrl> manualTeams=new();
@@ -25,6 +25,19 @@ public sealed partial class StrategicSupport {
  static bool ManualPending(int deadline,int now)=>deadline<0||deadline>now;
  static void BeginManualInput(out int __state){__state=manualInputDepth;manualInputDepth++;}
  static void EndManualInput(int __state){manualInputDepth=__state;}
+ sealed class ManualDeployScope {public int Input,Deploy;}
+ static void BeginManualDeploy(out ManualDeployScope __state){
+  __state=new(){Input=manualInputDepth,Deploy=manualDeployDepth};manualInputDepth++;manualDeployDepth++;
+ }
+ static void EndManualDeploy(ManualDeployScope __state){manualInputDepth=__state.Input;manualDeployDepth=__state.Deploy;}
+ static void AfterManualAssembly(Wo_DeployTeamCtrl __instance){
+  // The native confirmation coroutine writes the army fields directly, then
+  // RefreshLeader commits its roster. StartDeploy runs in a later coroutine,
+  // after the input scope has ended. Capture ownership at this commit point.
+  // Ordinary HUD/AI leader refreshes must never acquire player authority.
+  if(manualDeployDepth<=0||!ManualInput||!__instance||(__instance.m_listHero?.Count??0)==0||(__instance.m_dicDeployArmy?.Count??0)==0)return;
+  AfterManualTeamCommand(__instance);
+ }
  static void BeginManualGovernor(){manualGovernorDepth++;}
  static void EndManualGovernor(){manualGovernorDepth=Math.Max(0,manualGovernorDepth-1);}
  void HookManualOrders(Harmony h){
@@ -33,7 +46,8 @@ public sealed partial class StrategicSupport {
   h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"OBIOEOJAHMM"),prefix:H(nameof(BeginManualGovernor)),finalizer:H(nameof(EndManualGovernor)));
   h.Patch(AccessTools.Method(typeof(FNFJODHIJFO),"OHBNFHKFNPH"),prefix:H(nameof(BeginManualGovernor)),finalizer:H(nameof(EndManualGovernor)));
   h.Patch(AccessTools.Method(typeof(EventSystem),"Update"),prefix:H(nameof(BeginManualInput)),finalizer:H(nameof(EndManualInput)));
-  h.Patch(AccessTools.Method(typeof(DeployConfirmation),"MoveNext"),prefix:H(nameof(BeginManualInput)),finalizer:H(nameof(EndManualInput)));
+  h.Patch(AccessTools.Method(typeof(DeployConfirmation),"MoveNext"),prefix:H(nameof(BeginManualDeploy)),finalizer:H(nameof(EndManualDeploy)));
+  h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"RefreshLeader"),postfix:H(nameof(AfterManualAssembly)));
   h.Patch(AccessTools.Method(typeof(Ci_CityCtrl),"MouseLeftPress"),prefix:H(nameof(BeginManualInput)),finalizer:H(nameof(EndManualInput)));
   h.Patch(AccessTools.Method(typeof(Wo_DeployTeamCtrl),"MouseLeftPress"),prefix:H(nameof(BeginManualInput)),finalizer:H(nameof(EndManualInput)));
   h.Patch(AccessTools.Method(typeof(Wo_PassCtrl),"MouseLeftPress"),prefix:H(nameof(BeginManualInput)),finalizer:H(nameof(EndManualInput)));

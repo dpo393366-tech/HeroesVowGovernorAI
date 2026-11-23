@@ -5,6 +5,7 @@ public sealed partial class StrategicSupport {
  }
  sealed class InterceptionScope {
   public InterceptionScope Parent;public MKMOJNAJKJE Faction;
+  public Il2CppSystem.Collections.Generic.List<Wo_DeployTeamCtrl> OriginalField,FilteredField;
   public readonly Dictionary<IntPtr,InterceptionSnapshot> Existing=new();
  }
  [ThreadStatic]static InterceptionScope interceptionScope;
@@ -28,6 +29,15 @@ public sealed partial class StrategicSupport {
   __0=allowed;
   if(__instance.HMLLPOCACMJ!=null)foreach(var t in __instance.HMLLPOCACMJ)
    if(AutomaticFieldInterceptor(t)&&t.m_belongPower==__instance.IBGCLCAIBOL)state.Existing[t.Pointer]=new(){Team=t,Id=t.m_id,Faction=t.m_belongPower};
+  // A rendezvous is a committed movement order, not a free camp available
+  // for the native opportunistic interception selector.
+  if(__instance.HMLLPOCACMJ!=null){
+   foreach(var t in __instance.HMLLPOCACMJ)if(JointHuntOwned(t)){
+    state.OriginalField=__instance.HMLLPOCACMJ;state.FilteredField=new();
+    foreach(var member in state.OriginalField)if(!JointHuntOwned(member))state.FilteredField.Add(member);
+    __instance.HMLLPOCACMJ=state.FilteredField;break;
+   }
+  }
   if(rejected>0&&Gate("intercept-filter:"+__instance.IBGCLCAIBOL,30))Note($"intercept-candidates-filtered faction={__instance.IBGCLCAIBOL} allowed={allowed.Count} rejected={rejected} policy=actual-own-or-allied-target noRouteSearch=true");
  }
  static bool SameInterception(InterceptionSnapshot s)=>s.Team&&s.Team.m_id==s.Id&&s.Team.m_belongPower==s.Faction&&AutomaticFieldInterceptor(s.Team);
@@ -48,6 +58,7 @@ public sealed partial class StrategicSupport {
   // Restore before any recovery callbacks. A recovery failure or nested native
   // call must never leak a global dismissal exemption into unrelated gameplay.
   if(ReferenceEquals(interceptionScope,__state))interceptionScope=__state.Parent;
+  if(__state.FilteredField!=null&&__state.Faction.HMLLPOCACMJ?.Pointer==__state.FilteredField.Pointer)__state.Faction.HMLLPOCACMJ=__state.OriginalField;
   if(!Ready())return;
   foreach(var s in __state.Existing.Values)try{
    if(!SameInterception(s))continue;var t=s.Team;

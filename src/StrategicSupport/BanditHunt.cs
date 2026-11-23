@@ -1,9 +1,9 @@
-﻿using System;using System.Collections.Generic;using System.Linq;using UnityEngine;
+using System;using System.Collections.Generic;using System.Linq;using UnityEngine;
 public sealed partial class StrategicSupport {
  // Explicit vanilla BigMapArmy definitions: exclude private/event armies and
  // groups which have already become diplomatic factions.
  static readonly HashSet<string> raiderDefinitions=new(){"BMA100108","BMA100209","BMA100109","BMA100309","BMA100409","BMA100509","BMA100609","BMA100709"};
- sealed class HuntOrder {public Wo_DeployTeamCtrl Team,Target;public int Id,TargetId;public string Faction,Source,Governor;public double Started,Checked=-1,ProgressDay;public Vector3 Position;}
+ sealed class HuntOrder {public Wo_DeployTeamCtrl Team,Target;public int Id,TargetId;public string Faction,Source,Governor;public double Started,Checked=-1,ProgressDay;public Vector3 Position;public JointHunt Joint;public bool JointRouted;}
  static readonly Dictionary<IntPtr,HuntOrder> huntOrders=new();
  static bool LiveTeam(Wo_DeployTeamCtrl t)=>t&&ICGAEMLACJG.HFJIECIBFKB.TryGetValue(t.m_id,out var live)&&live?.Pointer==t.Pointer;
  static bool Raider(Wo_DeployTeamCtrl t)=>LiveTeam(t)&&string.IsNullOrEmpty(t.m_belongPower)&&t.m_bma!=null&&raiderDefinitions.Contains(t.m_bma.OJPECMNINNA)&&!t.m_isPrivate&&!t.IncludePlayer()&&!t.m_isInstantTeam&&t.GetSoldierNum(false)>0;
@@ -27,6 +27,7 @@ public sealed partial class StrategicSupport {
   var targets=AttackTeams().Where(Raider).ToArray();
   if(Gate("hunt-census:"+f.IBGCLCAIBOL,30))Note($"hunt-census faction={f.IBGCLCAIBOL} recognized={targets.Length} targets=[{string.Join(";",targets.Select(t=>t.m_id+":"+t.GetSoldierNum(false)))}]");
   foreach(var enemy in targets){
+   if(jointHunts.ContainsKey(MusterKey(f.IBGCLCAIBOL,enemy)))continue;
    var candidates=new List<(AFAGFHJONFJ City,int Days)>();
    var owned=f.PJMLPLDPEIM();if(owned==null)yield break;
    // Materialize before yielding: a destroyed/moved target is checked again
@@ -69,6 +70,7 @@ public sealed partial class StrategicSupport {
      Note($"hunt-ordered team={team.m_id} target={enemy.m_id} definition={enemy.m_bma.OJPECMNINNA} source={c.OJPECMNINNA} faction={f.IBGCLCAIBOL} power={team.GetCombatVal()} required={HuntPower(enemy)} travelDays={days} nativeAssembly=true");break;
     }catch{if(team){huntOrders.Remove(team.Pointer);if(team.m_deployState==AKOPKFPKJPP.Assemble)DismissSupport(team);}throw;}
    }
+   foreach(var phase in JointHuntSteps(f,enemy,candidates))yield return phase;
    foreach(var phase in HuntMusterSteps(f,enemy))yield return phase;
   }
  }
@@ -92,9 +94,11 @@ public sealed partial class StrategicSupport {
  }
  static bool GuardHuntStart(Wo_DeployTeamCtrl t){
   if(!t||!huntOrders.TryGetValue(t.Pointer,out var o)||o.Id!=t.m_id)return true;
+  if(o.Joint!=null){if(HandoffJointBattle(o.Joint))return true;string reason=JointHuntBlock(o.Joint);if(reason==null)return true;AbortJointHunt(o.Joint,reason);return false;}
   string block=HuntBlock(o);if(block==null)return true;EndHunt(o,block);return false;
  }
  static void CheckHunt(HuntOrder o){
+  if(o.Joint!=null){CheckJointHunt(o.Joint);return;}
   var t=o.Team;
   if(!LiveTeam(t)||t.m_id!=o.Id||t.m_belongPower!=o.Faction){huntOrders.Remove(t.Pointer);return;}
   if(ManualProtected(t)||t.m_isPrivate||t.IncludePlayer()||t.m_responseToPlayer){huntOrders.Remove(t.Pointer);return;}
